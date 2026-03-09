@@ -1,88 +1,72 @@
 package com.magicapps.sdk
 
-import kotlinx.serialization.SerialName
+import com.magicapps.sdk.core.*
+import com.magicapps.sdk.services.AuthService
 import kotlinx.serialization.Serializable
 
 /**
- * Configuration for the MagicApps SDK client.
+ * Health check response from GET /ping.
  */
-data class MagicAppsConfig(
-    /** Base URL of the MagicApps API. */
-    val baseUrl: String,
-    /** The app_id for your registered application. */
-    val appId: String,
-    /** Optional auth token for authenticated requests. */
-    val authToken: String? = null,
-    /** Request timeout in milliseconds. Defaults to 30000. */
-    val timeout: Long = 30_000L
-) {
-    init {
-        require(baseUrl.isNotBlank()) { "baseUrl must not be blank" }
-        require(appId.isNotBlank()) { "appId must not be blank" }
-    }
-}
-
-/** Information about a registered application. */
 @Serializable
-data class AppInfo(
-    @SerialName("app_id") val appId: String,
-    val name: String,
-    val slug: String,
-    val description: String? = null,
-    @SerialName("created_at") val createdAt: String,
-    @SerialName("updated_at") val updatedAt: String
+data class PingResponse(
+    val message: String,
+    val requestId: String? = null
 )
-
-/** A template within an application. */
-@Serializable
-data class Template(
-    @SerialName("template_id") val templateId: String,
-    @SerialName("app_id") val appId: String,
-    val name: String,
-    val description: String? = null,
-    @SerialName("created_at") val createdAt: String,
-    @SerialName("updated_at") val updatedAt: String
-)
-
-/** Base exception for MagicApps SDK errors. */
-open class MagicAppsException(message: String, cause: Throwable? = null) : Exception(message, cause)
-
-/** Exception from the MagicApps API. */
-class ApiException(
-    val statusCode: Int,
-    message: String,
-    val responseBody: String? = null
-) : MagicAppsException("API error $statusCode: $message")
 
 /**
- * MagicApps API client for Kotlin/JVM applications.
+ * The main MagicApps SDK client for Android/Kotlin.
+ *
+ * Provides app_id-scoped API access with automatic authentication,
+ * modular service plugins, and platform-conditional module availability.
+ *
+ * ```kotlin
+ * val client = MagicAppsClient(SdkConfig(
+ *     baseUrl = "https://api.magicapps.dev",
+ *     appId = "my-app"
+ * ))
+ *
+ * val pong = client.ping()
+ * ```
  */
-class MagicAppsClient(private val config: MagicAppsConfig) {
+class MagicAppsClient(config: SdkConfig) {
+    private val http = SdkHttpClient(config)
+    private val registry = ServiceRegistry(SdkPlatform.ANDROID)
 
-    private val normalizedBaseUrl = config.baseUrl.trimEnd('/')
+    /** Authentication service (all platforms). */
+    val auth = AuthService(http)
 
-    /** Get information about the current application. */
-    suspend fun getAppInfo(): AppInfo {
-        return request("GET", "/apps/${config.appId}")
+    init {
+        registry.register(auth)
     }
 
-    /** List templates for the current application. */
-    suspend fun listTemplates(nextToken: String? = null): List<Template> {
-        val query = if (nextToken != null) "?next_token=$nextToken" else ""
-        return request("GET", "/apps/${config.appId}/templates$query")
+    /** Health check - verifies connectivity to the MagicApps API. */
+    suspend fun ping(): PingResponse =
+        http.get("/ping", authMode = AuthMode.NONE)
+
+    /** Register a custom service module. */
+    fun registerService(module: ServiceModule) {
+        registry.register(module)
     }
 
-    /** Get a specific template by ID. */
-    suspend fun getTemplate(id: String): Template {
-        return request("GET", "/apps/${config.appId}/templates/$id")
+    /** Get a service by name (platform-checked). */
+    fun <T : ServiceModule> getService(name: String): T? =
+        registry.get(name)
+
+    /** Check if a service is available. */
+    fun hasService(name: String): Boolean =
+        registry.has(name)
+
+    /** List all available services. */
+    fun listServices(): List<ServiceModule> =
+        registry.listAvailable()
+
+    /** Update authentication tokens. */
+    fun setTokens(accessToken: String? = null, refreshToken: String? = null, ownerToken: String? = null) {
+        http.tokenManager.setTokens(accessToken, refreshToken, ownerToken)
     }
 
-    private suspend inline fun <reified T> request(
-        method: String,
-        path: String
-    ): T {
-        // Implementation uses Ktor client - placeholder for SDK scaffold
-        // Full HTTP implementation will be added when SDK is production-ready
-        throw NotImplementedError("HTTP client integration pending - see SDK roadmap")
+    /** Clear all authentication tokens. */
+    fun clearTokens() {
+        http.tokenManager.clearTokens()
     }
 }
