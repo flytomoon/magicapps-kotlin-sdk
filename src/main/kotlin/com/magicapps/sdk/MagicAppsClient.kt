@@ -2,6 +2,7 @@ package com.magicapps.sdk
 
 import com.magicapps.sdk.core.*
 import com.magicapps.sdk.services.AuthService
+import com.magicapps.sdk.services.GoogleAuthService
 import kotlinx.serialization.Serializable
 
 /**
@@ -34,9 +35,12 @@ class MagicAppsClient(config: SdkConfig) {
 
     /** Authentication service (all platforms). */
     val auth = AuthService(http)
+    /** Google Sign-In service (Android only). */
+    val googleAuth = GoogleAuthService(http)
 
     init {
         registry.register(auth)
+        registry.register(googleAuth)
     }
 
     /** Health check - verifies connectivity to the MagicApps API. */
