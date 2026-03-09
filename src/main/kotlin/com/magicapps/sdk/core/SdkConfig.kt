@@ -1,7 +1,7 @@
 package com.magicapps.sdk.core
 
 /**
- * Configuration for initializing the MagicApps SDK.
+ * Configuration for initializing the Magic Apps Cloud SDK.
  */
 data class SdkConfig(
     /** The base URL of the MagicApps API. */

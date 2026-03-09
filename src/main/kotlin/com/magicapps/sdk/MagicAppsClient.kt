@@ -20,7 +20,7 @@ data class PingResponse(
 )
 
 /**
- * The main MagicApps SDK client for Android/Kotlin.
+ * The main Magic Apps Cloud SDK client for Android/Kotlin.
  *
  * Provides app_id-scoped API access with automatic authentication,
  * modular service plugins, and platform-conditional module availability.

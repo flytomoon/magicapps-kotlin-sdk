@@ -7,7 +7,7 @@ plugins {
     id("org.jetbrains.dokka") version "1.9.20"
 }
 
-group = "com.magicapps"
+group = "cloud.magicapps"
 version = "0.1.0"
 
 repositories {
@@ -46,12 +46,12 @@ publishing {
             from(components["java"])
 
             groupId = project.group.toString()
-            artifactId = "magicapps-sdk"
+            artifactId = "magicapps-cloud-sdk"
             version = project.version.toString()
 
             pom {
-                name.set("MagicApps SDK")
-                description.set("Official MagicApps SDK for Kotlin/Android - provides authentication, registry, payments, and platform service access")
+                name.set("Magic Apps Cloud SDK")
+                description.set("Official Magic Apps Cloud SDK for Kotlin/Android - provides authentication, registry, payments, and platform service access")
                 url.set("https://github.com/magicapps/magicapps-infra")
 
                 licenses {

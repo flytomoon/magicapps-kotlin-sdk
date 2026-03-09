@@ -7,7 +7,7 @@ import java.net.URL
 import kotlin.math.pow
 
 /**
- * Internal HTTP client for the MagicApps SDK.
+ * Internal HTTP client for the Magic Apps Cloud SDK.
  * Wraps HttpURLConnection with app_id scoping, authentication, retries, and typed errors.
  */
 class SdkHttpClient(config: SdkConfig) {

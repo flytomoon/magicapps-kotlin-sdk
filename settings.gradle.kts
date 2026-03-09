@@ -1,1 +1,1 @@
-rootProject.name = "magicapps-sdk"
+rootProject.name = "magicapps-cloud-sdk"
