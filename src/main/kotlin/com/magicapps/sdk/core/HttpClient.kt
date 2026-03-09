@@ -13,7 +13,7 @@ import kotlin.math.pow
 class SdkHttpClient(config: SdkConfig) {
     val tokenManager = TokenManager(config)
     private val baseUrl = config.baseUrl.trimEnd('/')
-    private val appId = config.appId
+    internal val appId = config.appId
     private val defaultRetries = config.retries
     private val retryDelayMs = config.retryDelayMs
     private val json = Json { ignoreUnknownKeys = true }
