@@ -4,6 +4,7 @@ plugins {
     `java-library`
     `maven-publish`
     signing
+    id("org.jetbrains.dokka") version "1.9.20"
 }
 
 group = "com.magicapps"
