@@ -6,6 +6,8 @@ import com.magicapps.sdk.services.GoogleAuthService
 import com.magicapps.sdk.services.AiService
 import com.magicapps.sdk.services.TemplatesService
 import com.magicapps.sdk.services.DevicesService
+import com.magicapps.sdk.services.EndpointsService
+import com.magicapps.sdk.services.LookupTablesService
 import kotlinx.serialization.Serializable
 
 /**
@@ -46,6 +48,10 @@ class MagicAppsClient(config: SdkConfig) {
     val templates = TemplatesService(http)
     /** Devices catalog service (all platforms). */
     val devices = DevicesService(http)
+    /** Endpoints and events service (all platforms). */
+    val endpoints = EndpointsService(http)
+    /** Lookup tables service (all platforms). */
+    val lookupTables = LookupTablesService(http)
 
     init {
         registry.register(auth)
@@ -53,6 +59,8 @@ class MagicAppsClient(config: SdkConfig) {
         registry.register(ai)
         registry.register(templates)
         registry.register(devices)
+        registry.register(endpoints)
+        registry.register(lookupTables)
     }
 
     /** Health check - verifies connectivity to the MagicApps API. */

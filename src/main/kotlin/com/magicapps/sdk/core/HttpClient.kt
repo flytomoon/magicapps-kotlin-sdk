@@ -31,8 +31,9 @@ class SdkHttpClient(config: SdkConfig) {
         path: String,
         body: String? = null,
         authMode: AuthMode = AuthMode.BEARER,
-        retries: Int? = null
-    ): T = request("POST", path, body, null, authMode, retries)
+        retries: Int? = null,
+        extraHeaders: Map<String, String>? = null
+    ): T = request("POST", path, body, null, authMode, retries, extraHeaders)
 
     /** Make a PUT request. */
     suspend inline fun <reified T> put(
@@ -56,7 +57,8 @@ class SdkHttpClient(config: SdkConfig) {
         body: String?,
         query: Map<String, String>?,
         authMode: AuthMode,
-        retries: Int?
+        retries: Int?,
+        extraHeaders: Map<String, String>? = null
     ): T {
         val maxRetries = retries ?: defaultRetries
         val url = buildUrl(path, query)
@@ -71,6 +73,10 @@ class SdkHttpClient(config: SdkConfig) {
 
                 tokenManager.getAuthHeader(authMode)?.let {
                     connection.setRequestProperty("Authorization", it)
+                }
+
+                extraHeaders?.forEach { (key, value) ->
+                    connection.setRequestProperty(key, value)
                 }
 
                 if (body != null) {
