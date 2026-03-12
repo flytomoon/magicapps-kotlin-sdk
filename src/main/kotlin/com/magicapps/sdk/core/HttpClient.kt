@@ -4,6 +4,8 @@ import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import java.net.HttpURLConnection
 import java.net.URL
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLContext
 import kotlin.math.pow
 
 /**
@@ -17,6 +19,10 @@ class SdkHttpClient(config: SdkConfig) {
     private val defaultRetries = config.retries
     private val retryDelayMs = config.retryDelayMs
     private val json = Json { ignoreUnknownKeys = true }
+    /** Pre-built SSL context with certificate pinning, or null if pinning is disabled. */
+    private val pinnedSSLContext: SSLContext? = config.certificatePinning?.let { pinConfig ->
+        if (pinConfig.enabled) CertificatePinnerFactory.createPinnedSSLContext(pinConfig) else null
+    }
 
     /** Make a GET request. */
     suspend inline fun <reified T> get(
@@ -67,6 +73,10 @@ class SdkHttpClient(config: SdkConfig) {
         while (true) {
             try {
                 val connection = URL(url).openConnection() as HttpURLConnection
+                // Apply certificate pinning if configured
+                if (connection is HttpsURLConnection && pinnedSSLContext != null) {
+                    CertificatePinnerFactory.applyPinning(connection, pinnedSSLContext)
+                }
                 connection.requestMethod = method
                 connection.setRequestProperty("Content-Type", "application/json")
                 connection.setRequestProperty("X-App-Id", appId)

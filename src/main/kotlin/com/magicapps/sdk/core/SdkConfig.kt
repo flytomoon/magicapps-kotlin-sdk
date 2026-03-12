@@ -21,7 +21,20 @@ data class SdkConfig(
     /** Callback invoked when tokens are refreshed. */
     var onTokenRefresh: ((TokenPair) -> Unit)? = null,
     /** Callback invoked when token refresh fails. */
-    var onAuthError: ((SdkException) -> Unit)? = null
+    var onAuthError: ((SdkException) -> Unit)? = null,
+    /**
+     * Certificate pinning configuration. When set, the SDK validates that the
+     * server's TLS certificate matches one of the configured public key hashes.
+     * Set [CertificatePinningConfig.enabled] to `false` for development/testing.
+     */
+    val certificatePinning: CertificatePinningConfig? = null,
+    /**
+     * Token storage backend. Defaults to [EncryptedFileTokenStorage] for
+     * encrypted persistence. Pass [InMemoryTokenStorage] to opt out, or
+     * provide a custom [TokenStorage] implementation (e.g., EncryptedSharedPreferences
+     * on Android).
+     */
+    val tokenStorage: TokenStorage = EncryptedFileTokenStorage()
 )
 
 /**
