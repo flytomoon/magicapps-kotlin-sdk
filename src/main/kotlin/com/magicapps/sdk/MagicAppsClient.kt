@@ -89,8 +89,13 @@ class MagicAppsClient(config: SdkConfig) {
         http.tokenManager.setTokens(accessToken, refreshToken, ownerToken)
     }
 
-    /** Clear all authentication tokens. */
+    /** Clear all authentication tokens from memory and persistent storage. */
     fun clearTokens() {
         http.tokenManager.clearTokens()
+    }
+
+    /** Convenience alias for [clearTokens] — clears all tokens on logout. */
+    fun logout() {
+        clearTokens()
     }
 }

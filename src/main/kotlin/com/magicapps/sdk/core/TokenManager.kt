@@ -9,15 +9,35 @@ import java.util.Base64
 /**
  * Manages JWT access tokens and owner tokens for the SDK.
  * Thread-safe with coroutine mutex for concurrent token refresh.
+ * Tokens are persisted to the configured [TokenStorage] backend
+ * (encrypted file storage by default) so they survive app restarts.
  */
 class TokenManager(config: SdkConfig) {
-    private var accessToken: String? = config.accessToken
-    private var refreshToken: String? = config.refreshToken
-    private var ownerToken: String? = config.ownerToken
+    private var accessToken: String?
+    private var refreshToken: String?
+    private var ownerToken: String?
     private val baseUrl = config.baseUrl.trimEnd('/')
     private val onTokenRefresh = config.onTokenRefresh
     private val mutex = Mutex()
     private val json = Json { ignoreUnknownKeys = true }
+    private val storage: TokenStorage = config.tokenStorage
+
+    init {
+        // Load persisted tokens from storage, then override with any
+        // tokens explicitly provided in the config.
+        val storedAccess = try { storage.load(TokenStorageKeys.ACCESS_TOKEN) } catch (_: Exception) { null }
+        val storedRefresh = try { storage.load(TokenStorageKeys.REFRESH_TOKEN) } catch (_: Exception) { null }
+        val storedOwner = try { storage.load(TokenStorageKeys.OWNER_TOKEN) } catch (_: Exception) { null }
+
+        accessToken = config.accessToken ?: storedAccess
+        refreshToken = config.refreshToken ?: storedRefresh
+        ownerToken = config.ownerToken ?: storedOwner
+
+        // Persist any explicitly provided tokens so they are available next launch.
+        config.accessToken?.let { try { storage.save(TokenStorageKeys.ACCESS_TOKEN, it) } catch (_: Exception) {} }
+        config.refreshToken?.let { try { storage.save(TokenStorageKeys.REFRESH_TOKEN, it) } catch (_: Exception) {} }
+        config.ownerToken?.let { try { storage.save(TokenStorageKeys.OWNER_TOKEN, it) } catch (_: Exception) {} }
+    }
 
     /** Get the current access token, refreshing if expired. */
     suspend fun getAccessToken(): String? {
@@ -41,18 +61,28 @@ class TokenManager(config: SdkConfig) {
         AuthMode.NONE -> null
     }
 
-    /** Update stored tokens. */
+    /** Update stored tokens. Also persists to the configured storage backend. */
     fun setTokens(accessToken: String? = null, refreshToken: String? = null, ownerToken: String? = null) {
-        accessToken?.let { this.accessToken = it }
-        refreshToken?.let { this.refreshToken = it }
-        ownerToken?.let { this.ownerToken = it }
+        accessToken?.let {
+            this.accessToken = it
+            try { storage.save(TokenStorageKeys.ACCESS_TOKEN, it) } catch (_: Exception) {}
+        }
+        refreshToken?.let {
+            this.refreshToken = it
+            try { storage.save(TokenStorageKeys.REFRESH_TOKEN, it) } catch (_: Exception) {}
+        }
+        ownerToken?.let {
+            this.ownerToken = it
+            try { storage.save(TokenStorageKeys.OWNER_TOKEN, it) } catch (_: Exception) {}
+        }
     }
 
-    /** Clear all stored tokens. */
+    /** Clear all stored tokens from memory and persistent storage. */
     fun clearTokens() {
         accessToken = null
         refreshToken = null
         ownerToken = null
+        try { storage.deleteAll() } catch (_: Exception) {}
     }
 
     private fun isTokenExpired(token: String): Boolean {
@@ -99,6 +129,8 @@ class TokenManager(config: SdkConfig) {
             if (connection.responseCode != 200) {
                 accessToken = null
                 refreshToken = null
+                try { storage.delete(TokenStorageKeys.ACCESS_TOKEN) } catch (_: Exception) {}
+                try { storage.delete(TokenStorageKeys.REFRESH_TOKEN) } catch (_: Exception) {}
                 return@withLock null
             }
 
@@ -108,7 +140,11 @@ class TokenManager(config: SdkConfig) {
             val responseBody = connection.inputStream.bufferedReader().readText()
             val tokens = json.decodeFromString<RefreshResponse>(responseBody)
             accessToken = tokens.accessToken
-            tokens.refreshToken?.let { refreshToken = it }
+            try { storage.save(TokenStorageKeys.ACCESS_TOKEN, tokens.accessToken) } catch (_: Exception) {}
+            tokens.refreshToken?.let {
+                refreshToken = it
+                try { storage.save(TokenStorageKeys.REFRESH_TOKEN, it) } catch (_: Exception) {}
+            }
 
             onTokenRefresh?.invoke(TokenPair(tokens.accessToken, tokens.refreshToken))
             tokens.accessToken
