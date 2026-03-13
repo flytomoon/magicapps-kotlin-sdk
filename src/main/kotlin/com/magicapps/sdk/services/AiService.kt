@@ -132,6 +132,34 @@ data class AiUsageSummary(
     val breakdown: List<AiUsageBreakdown>? = null
 )
 
+// --- AI Detailed Usage Types ---
+
+/** A single AI usage record (per-request detail). */
+@Serializable
+data class AiUsageRecord(
+    @SerialName("usage_id") val usageId: String,
+    @SerialName("app_id") val appId: String,
+    @SerialName("provider_id") val providerId: String,
+    @SerialName("model_id") val modelId: String,
+    @SerialName("request_type") val requestType: String,
+    @SerialName("input_tokens") val inputTokens: Int,
+    @SerialName("output_tokens") val outputTokens: Int,
+    @SerialName("total_tokens") val totalTokens: Int,
+    @SerialName("latency_ms") val latencyMs: Int,
+    val status: String,
+    @SerialName("created_at") val createdAt: Double,
+    @SerialName("expires_at") val expiresAt: Double,
+    @SerialName("error_code") val errorCode: String? = null,
+    @SerialName("user_id") val userId: String? = null
+)
+
+/** Response from the detailed AI usage endpoint. */
+@Serializable
+data class AiUsageResponse(
+    val usage: List<AiUsageRecord>,
+    val count: Int
+)
+
 /**
  * AI proxy service module.
  * Provides access to chat completions, embeddings, image generation,
@@ -194,6 +222,22 @@ class AiService(private val http: SdkHttpClient) : ServiceModule {
     }
 
     // --- Usage ---
+
+    /**
+     * Get detailed per-request AI usage records for the current app.
+     *
+     * @param limit Maximum number of records to return (1-100, default 50).
+     * @param startDate Start of date range filter (ISO 8601 string).
+     * @param endDate End of date range filter (ISO 8601 string).
+     * @return A response containing individual usage records and count.
+     */
+    suspend fun getUsage(limit: Int? = null, startDate: String? = null, endDate: String? = null): AiUsageResponse {
+        val query = mutableMapOf<String, String>()
+        if (limit != null) query["limit"] = limit.toString()
+        if (startDate != null) query["start_date"] = startDate
+        if (endDate != null) query["end_date"] = endDate
+        return http.get("/apps/${http.appId}/ai/usage", query = query.ifEmpty { null })
+    }
 
     /** Get AI usage summary for the current app. */
     suspend fun getUsageSummary(): AiUsageSummary =
