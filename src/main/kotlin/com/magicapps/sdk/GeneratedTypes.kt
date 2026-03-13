@@ -1,12 +1,28 @@
 /**
  * Auto-generated API types from OpenAPI specification.
  * DO NOT EDIT MANUALLY - regenerate with: npm run openapi:generate-types
- * Generated at: 2026-03-09T07:54:32.674Z
+ * Generated at: 2026-03-13T17:44:30.433Z
  */
 package com.magicapps.sdk
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+
+/** Platform health check response with per-service status */
+@Serializable
+data class PlatformHealthResponse(
+    /** "Overall platform status: healthy (all pass), degraded (some non-critical fail), unhealthy (critical failures)" */
+    val status: String,
+    /** ISO 8601 timestamp of when the check was performed */
+    val timestamp: String,
+    /** Deployment environment identifier (dev, staging, prod) */
+    val environment: String,
+    /** Per-service health check results */
+    val checks: Map<String, Any>,
+    val required: String? = null,
+    /** Generic status message without secrets or internal details */
+    val properties: String? = null
+)
 
 @Serializable
 data class AuthTokenResponse(
