@@ -114,23 +114,31 @@ data class ModerationResponse(
 
 // --- AI Usage Types ---
 
+/// A single period summary record from the AI usage summary endpoint.
+/// Source: lambda/ai_proxy/index.js handleGetUsageSummary (~line 457-474)
+/// Fields from DynamoDB AI_USAGE_SUMMARY_TABLE.
 @Serializable
-data class AiUsageBreakdown(
-    val endpoint: String? = null,
-    val model: String? = null,
-    val requests: Int? = null,
-    val tokens: Int? = null,
-    val cost: Double? = null
+data class AiUsageSummaryRecord(
+    @SerialName("app_id") val appId: String? = null,
+    val period: String? = null,
+    @SerialName("total_requests") val totalRequests: Int? = null,
+    @SerialName("total_input_tokens") val totalInputTokens: Int? = null,
+    @SerialName("total_output_tokens") val totalOutputTokens: Int? = null,
+    @SerialName("total_estimated_cost_usd") val totalEstimatedCostUsd: Double? = null,
+    @SerialName("updated_at") val updatedAt: Double? = null
 )
 
+/// Response wrapper from GET /apps/{app_id}/ai/usage/summary.
+/// Source: lambda/ai_proxy/index.js handleGetUsageSummary (~line 457-474)
+/// Response shape: { summaries: AiUsageSummaryRecord[] }
 @Serializable
 data class AiUsageSummary(
-    @SerialName("total_requests") val totalRequests: Int? = null,
-    @SerialName("total_tokens") val totalTokens: Int? = null,
-    @SerialName("total_cost") val totalCost: Double? = null,
-    val period: String? = null,
-    val breakdown: List<AiUsageBreakdown>? = null
-)
+    val summaries: List<AiUsageSummaryRecord>? = null
+) {
+    /** Convenience: get the total requests across all summary records. */
+    val totalRequests: Int?
+        get() = summaries?.sumOf { it.totalRequests ?: 0 }
+}
 
 // --- AI Detailed Usage Types ---
 

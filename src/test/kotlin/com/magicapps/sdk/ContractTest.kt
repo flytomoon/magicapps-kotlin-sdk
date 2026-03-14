@@ -17,6 +17,10 @@ import org.junit.jupiter.api.Assertions.*
  *   2) Uses the correct HTTP method (GET, POST, PUT, DELETE)
  *   3) Response data classes can deserialize realistic API response JSON
  *
+ * All mock fixtures are golden fixtures sourced from real Lambda handler return
+ * statements. Each fixture includes a source comment referencing the Lambda file,
+ * function name, and approximate line number.
+ *
  * Uses OkHttp MockWebServer to intercept HttpURLConnection requests
  * made by SdkHttpClient, which uses java.net.HttpURLConnection internally.
  */
@@ -40,6 +44,80 @@ class ContractTest {
         fun stopServer() {
             server.shutdown()
         }
+
+        // ====================================================================
+        // Golden Fixtures (sourced from real Lambda handler return statements)
+        // ====================================================================
+
+        // Source: lambda/templates/index.js ok() helper (~line 1028)
+        // Ping returns { message, requestId }
+        const val FIXTURE_PING = """{"message":"pong","requestId":"req-abc123"}"""
+
+        // Source: lambda/templates/index.js handleList (~line 860) - returns { items: Template[] }
+        const val FIXTURE_TEMPLATES_LIST = """{"items":[{"template_id":"t1","app_id":"test-app","name":"Test Template","slug":"test-template","description":"A test template","created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z"}],"count":1}"""
+
+        // Source: lambda/templates/index.js handleGet (~line 880) - returns single template
+        const val FIXTURE_TEMPLATE = """{"template_id":"t1","app_id":"test-app","name":"Test","description":"A test template","created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z"}"""
+
+        // Source: lambda/templates/index.js handleCreate (~line 963)
+        const val FIXTURE_TEMPLATE_CREATED = """{"template_id":"t2","app_id":"test-app","name":"New Template","description":"desc","created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z"}"""
+
+        // Source: lambda/templates/index.js handleRegistryApps (~line 515-518) via toCardApp (~line 571-591)
+        // Returns { items: CardApp[] }
+        const val FIXTURE_REGISTRY_APPS = """{"items":[{"app_id":"app1","name":"App One","slug":"app-one","icon_url":"https://example.com/icon.png","description":"A registry app"}]}"""
+
+        // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
+        // All AI responses are normalized to { id, provider, model, choices, usage }
+        const val FIXTURE_CHAT_COMPLETION = """{"id":"ai_resp_abc123","provider":"openai","model":"gpt-4","choices":[{"index":0,"message":{"role":"assistant","content":"Hello!"},"finish_reason":"stop"}],"usage":{"input_tokens":10,"output_tokens":5,"total_tokens":15,"estimated_cost_usd":0.001}}"""
+
+        // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
+        const val FIXTURE_EMBEDDING = """{"id":"ai_resp_emb123","provider":"openai","model":"text-embedding-3-small","choices":[],"usage":{"input_tokens":8,"output_tokens":0,"total_tokens":8,"estimated_cost_usd":0.0001},"data":[{"embedding":[0.1,0.2,0.3],"index":0}]}"""
+
+        // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
+        const val FIXTURE_IMAGE_GENERATION = """{"id":"ai_resp_img123","provider":"openai","model":"dall-e-3","choices":[],"usage":{"input_tokens":0,"output_tokens":0,"total_tokens":0,"estimated_cost_usd":0.04},"data":[{"url":"https://example.com/generated.png","revised_prompt":"A friendly cat"}]}"""
+
+        // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
+        const val FIXTURE_MODERATION = """{"id":"ai_resp_mod123","provider":"openai","model":"text-moderation-latest","choices":[],"usage":{"input_tokens":5,"output_tokens":0,"total_tokens":5,"estimated_cost_usd":0.0},"results":[{"flagged":false,"categories":{"hate":false,"sexual":false,"violence":false},"category_scores":{"hate":0.001,"sexual":0.0002,"violence":0.0001}}]}"""
+
+        // Source: lambda/ai_proxy/index.js handleGetUsageSummary (~line 457-474)
+        // Returns { summaries: AiUsageSummaryRecord[] }
+        const val FIXTURE_AI_USAGE_SUMMARY = """{"summaries":[{"app_id":"test-app","period":"MONTHLY#2026-03","total_requests":150,"total_input_tokens":50000,"total_output_tokens":25000,"total_estimated_cost_usd":1.25,"updated_at":1741900000}]}"""
+
+        // Source: lambda/ai_proxy/index.js handleGetUsage (~line 436-454)
+        // Returns { usage: AiUsageRecord[], count: N }
+        const val FIXTURE_AI_USAGE = """{"usage":[{"usage_id":"usage-001","app_id":"test-app","provider_id":"openai","model_id":"gpt-4","request_type":"chat","input_tokens":10,"output_tokens":5,"total_tokens":15,"latency_ms":250,"status":"success","created_at":1741900000.0,"expires_at":1749676000.0}],"count":1}"""
+
+        // Source: lambda/devices/index.js (~line 22-26)
+        // Returns { items: Device[] }
+        const val FIXTURE_DEVICES = """{"items":[{"device_id":"d1","device_name":"TestDevice","display_name":"Test Device","device_type":"bluetooth","tags":["ios"],"os":"iOS","manufacturer":"Apple"}],"count":1}"""
+
+        // Source: lambda/endpoints/index.js handleCreate (~line 221-232)
+        const val FIXTURE_ENDPOINT_CREATED = """{"slug":"abc123","status":"active","expires_at":1749676000,"endpoint_path":"/events/abc123","hmac_secret":"secret-key","hmac_required":true}"""
+
+        // Source: lambda/endpoints/index.js handleRevokeAndReplace (~line 402-414)
+        const val FIXTURE_ENDPOINT_REVOKE_AND_REPLACE = """{"old_slug":"old-slug","new_slug":"new-slug","new_endpoint_path":"/events/new-slug","revoked_expires_at":1741900000,"new_expires_at":1749676000,"hmac_secret":"new-hmac-secret","hmac_required":true}"""
+
+        // Source: lambda/endpoints/index.js handleRevoke (~line 521-524)
+        const val FIXTURE_ENDPOINT_REVOKE = """{"slug":"revoked-slug","revoked":true}"""
+
+        // Source: lambda/events/index.js POST handler (~line 238-246)
+        const val FIXTURE_POST_EVENT = """{"slug":"my-slug","timestamp":1741900000,"expires_at":1749676000}"""
+
+        // Source: lambda/events/index.js GET handler with data (~line 250-260)
+        const val FIXTURE_CONSUME_EVENT = """{"slug":"my-slug","timestamp":1741900000,"created_at":1741899000,"expires_at":1749676000,"text":"dictated text","keywords":["hello","world"],"raw_text":"dictated text full","empty":false}"""
+
+        // Source: lambda/events/index.js GET handler empty slot (~line 262-267)
+        const val FIXTURE_CONSUME_EVENT_EMPTY = """{"slug":"my-slug","empty":true,"text":"George Lucas"}"""
+
+        // Source: lambda/lookup_tables/index.js toSummary (~line 867-880)
+        // list handler returns { items: LookupTableSummary[] }
+        const val FIXTURE_LOOKUP_TABLES_LIST = """{"items":[{"lookup_table_id":"lt1","name":"Cities","description":"World cities","schema_keys":["name","country"],"schema_key_count":2,"schema_keys_truncated":false,"version":1,"payload_hash":"abc123","storage_mode":"chunked","chunk_count":3,"updated_at":1741900000}]}"""
+
+        // Source: lambda/lookup_tables/index.js toClientDetail (~line 903-920)
+        const val FIXTURE_LOOKUP_TABLE_DETAIL = """{"lookup_table_id":"lt1","name":"Cities","description":"World cities","schema_keys":["name","country"],"schema_key_count":2,"schema_keys_truncated":false,"version":2,"payload_hash":"abc123","storage_mode":"chunked","chunk_count":3,"updated_at":1741900000,"prompt":"Find cities by name","default_success_sentence":"Found {{name}} in {{country}}","default_fail_sentence":"City not found","chunk_encoding":"json","manifest_hash":"mhash","chunks":[{"index":0,"path":"/chunks/0","sha256":"hash0","byte_length":1024},{"index":1,"path":"/chunks/1","sha256":"hash1","byte_length":512}]}"""
+
+        // Source: lambda/lookup_tables/index.js handleClientChunk (~line 134-138)
+        const val FIXTURE_LOOKUP_TABLE_CHUNK = """{"London":{"country":"UK","population":9000000}}"""
     }
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -274,14 +352,8 @@ class ContractTest {
         fun `createChatCompletion targets POST apps-appId-ai-chat-completions`() = runTest {
             val http = createHttpClient()
             val service = AiService(http)
-            enqueue("""{
-                "id":"chatcmpl-1",
-                "object":"chat.completion",
-                "created":1700000000,
-                "model":"gpt-4",
-                "choices":[{"index":0,"message":{"role":"assistant","content":"Hello!"},"finish_reason":"stop"}],
-                "usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15}
-            }""")
+            // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
+            enqueue(FIXTURE_CHAT_COMPLETION)
 
             val request = ChatCompletionRequest(
                 messages = listOf(ChatMessage(role = "user", content = "Hi")),
@@ -300,9 +372,8 @@ class ContractTest {
         fun `chat convenience method targets same endpoint`() = runTest {
             val http = createHttpClient()
             val service = AiService(http)
-            enqueue("""{
-                "choices":[{"index":0,"message":{"role":"assistant","content":"World"},"finish_reason":"stop"}]
-            }""")
+            // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
+            enqueue(FIXTURE_CHAT_COMPLETION)
 
             service.chat("Hello", "gpt-4")
             val recorded = server.takeRequest()
@@ -315,14 +386,10 @@ class ContractTest {
         fun `createEmbedding targets POST apps-appId-ai-embeddings`() = runTest {
             val http = createHttpClient()
             val service = AiService(http)
-            enqueue("""{
-                "object":"list",
-                "data":[{"object":"embedding","embedding":[0.1,0.2,0.3],"index":0}],
-                "model":"text-embedding-ada-002",
-                "usage":{"prompt_tokens":5,"total_tokens":5}
-            }""")
+            // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
+            enqueue(FIXTURE_EMBEDDING)
 
-            val result = service.createEmbedding("test input", "text-embedding-ada-002")
+            val result = service.createEmbedding("test input", "text-embedding-3-small")
             val recorded = server.takeRequest()
 
             assertEquals("POST", recorded.method)
@@ -334,10 +401,8 @@ class ContractTest {
         fun `createImage targets POST apps-appId-ai-images-generations`() = runTest {
             val http = createHttpClient()
             val service = AiService(http)
-            enqueue("""{
-                "created":1700000000,
-                "data":[{"url":"https://example.com/img.png","revised_prompt":"A cat"}]
-            }""")
+            // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
+            enqueue(FIXTURE_IMAGE_GENERATION)
 
             val result = service.createImage("a cat", n = 1, size = "1024x1024")
             val recorded = server.takeRequest()
@@ -345,18 +410,15 @@ class ContractTest {
             assertEquals("POST", recorded.method)
             assertEquals("/apps/$TEST_APP_ID/ai/images/generations", recorded.path)
             assertEquals(1, result.data.size)
-            assertEquals("https://example.com/img.png", result.data[0].url)
+            assertEquals("https://example.com/generated.png", result.data[0].url)
         }
 
         @Test
         fun `createModeration targets POST apps-appId-ai-moderations`() = runTest {
             val http = createHttpClient()
             val service = AiService(http)
-            enqueue("""{
-                "id":"modr-1",
-                "model":"text-moderation-latest",
-                "results":[{"flagged":false,"categories":{"hate":false,"sexual":false},"category_scores":{"hate":0.01}}]
-            }""")
+            // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
+            enqueue(FIXTURE_MODERATION)
 
             val result = service.createModeration("safe text")
             val recorded = server.takeRequest()
@@ -370,20 +432,36 @@ class ContractTest {
         fun `getUsageSummary targets GET apps-appId-ai-usage-summary`() = runTest {
             val http = createHttpClient()
             val service = AiService(http)
-            enqueue("""{
-                "total_requests":100,
-                "total_tokens":50000,
-                "total_cost":1.50,
-                "period":"2026-03",
-                "breakdown":[{"endpoint":"chat/completions","model":"gpt-4","requests":80,"tokens":40000,"cost":1.20}]
-            }""")
+            // Source: lambda/ai_proxy/index.js handleGetUsageSummary (~line 457-474)
+            // Returns { summaries: AiUsageSummaryRecord[] }
+            enqueue(FIXTURE_AI_USAGE_SUMMARY)
 
             val result = service.getUsageSummary()
             val recorded = server.takeRequest()
 
             assertEquals("GET", recorded.method)
             assertEquals("/apps/$TEST_APP_ID/ai/usage/summary", recorded.path)
-            assertEquals(100, result.totalRequests)
+            assertEquals(1, result.summaries?.size)
+            assertEquals(150, result.summaries?.get(0)?.totalRequests)
+            assertEquals(150, result.totalRequests)
+        }
+
+        @Test
+        fun `getUsage targets GET apps-appId-ai-usage`() = runTest {
+            val http = createHttpClient()
+            val service = AiService(http)
+            // Source: lambda/ai_proxy/index.js handleGetUsage (~line 436-454)
+            // Returns { usage: AiUsageRecord[], count: N }
+            enqueue(FIXTURE_AI_USAGE)
+
+            val result = service.getUsage()
+            val recorded = server.takeRequest()
+
+            assertEquals("GET", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/ai/usage", recorded.path)
+            assertEquals(1, result.usage.size)
+            assertEquals("usage-001", result.usage[0].usageId)
+            assertEquals(1, result.count)
         }
     }
 
@@ -397,10 +475,8 @@ class ContractTest {
         fun `list targets GET apps-appId-templates`() = runTest {
             val http = createHttpClient()
             val service = TemplatesService(http)
-            enqueue("""{
-                "templates":[{"template_id":"t1","name":"Test","description":"A test template"}],
-                "count":1
-            }""")
+            // Source: lambda/templates/index.js handleList (~line 860) - returns { items: Template[] }
+            enqueue(FIXTURE_TEMPLATES_LIST)
 
             val result = service.list()
             val recorded = server.takeRequest()
@@ -415,7 +491,8 @@ class ContractTest {
         fun `list with pagination targets GET apps-appId-templates with next_token query`() = runTest {
             val http = createHttpClient()
             val service = TemplatesService(http)
-            enqueue("""{"templates":[],"count":0}""")
+            // Source: lambda/templates/index.js handleList (~line 860)
+            enqueue("""{"items":[],"count":0}""")
 
             service.list(nextToken = "page2")
             val recorded = server.takeRequest()
@@ -429,7 +506,8 @@ class ContractTest {
         fun `get targets GET apps-appId-templates-templateId`() = runTest {
             val http = createHttpClient()
             val service = TemplatesService(http)
-            enqueue("""{"template_id":"t1","app_id":"$TEST_APP_ID","name":"Test"}""")
+            // Source: lambda/templates/index.js handleGet (~line 880) - returns single template
+            enqueue(FIXTURE_TEMPLATE)
 
             val result = service.get("t1")
             val recorded = server.takeRequest()
@@ -443,7 +521,8 @@ class ContractTest {
         fun `create targets POST apps-appId-templates`() = runTest {
             val http = createHttpClient()
             val service = TemplatesService(http)
-            enqueue("""{"template_id":"t2","name":"New Template","description":"desc"}""")
+            // Source: lambda/templates/index.js handleCreate (~line 963)
+            enqueue(FIXTURE_TEMPLATE_CREATED)
 
             val result = service.create("New Template", description = "desc")
             val recorded = server.takeRequest()
@@ -457,7 +536,8 @@ class ContractTest {
         fun `update targets PUT apps-appId-templates-templateId`() = runTest {
             val http = createHttpClient()
             val service = TemplatesService(http)
-            enqueue("""{"template_id":"t1","name":"Updated"}""")
+            // Source: lambda/templates/index.js handleUpdate
+            enqueue("""{"template_id":"t1","name":"Updated","updated_at":"2025-06-01T00:00:00Z"}""")
 
             val result = service.update("t1", name = "Updated")
             val recorded = server.takeRequest()
@@ -484,9 +564,9 @@ class ContractTest {
         fun `browseRegistry targets GET registry-apps`() = runTest {
             val http = createHttpClient()
             val service = TemplatesService(http)
-            enqueue("""{
-                "apps":[{"app_id":"app1","name":"App One","slug":"app-one"}]
-            }""")
+            // Source: lambda/templates/index.js handleRegistryApps (~line 515-518)
+            // Returns { items: CardApp[] } via toCardApp (~line 571-591)
+            enqueue(FIXTURE_REGISTRY_APPS)
 
             val result = service.browseRegistry()
             val recorded = server.takeRequest()
@@ -508,10 +588,8 @@ class ContractTest {
         fun `list targets GET apps-appId-devices`() = runTest {
             val http = createHttpClient()
             val service = DevicesService(http)
-            enqueue("""{
-                "devices":[{"device_id":"d1","device_name":"TestDevice","display_name":"Test Device","device_type":"bluetooth"}],
-                "count":1
-            }""")
+            // Source: lambda/devices/index.js (~line 22-26) - returns { items: Device[] }
+            enqueue(FIXTURE_DEVICES)
 
             val result = service.list()
             val recorded = server.takeRequest()
@@ -526,19 +604,16 @@ class ContractTest {
         fun `getAll returns flat list of devices`() = runTest {
             val http = createHttpClient()
             val service = DevicesService(http)
-            enqueue("""{
-                "devices":[
-                    {"device_id":"d1","device_name":"Dev1"},
-                    {"device_id":"d2","device_name":"Dev2"}
-                ]
-            }""")
+            // Source: lambda/devices/index.js (~line 22-26) - returns { items: Device[] }
+            enqueue(FIXTURE_DEVICES)
 
             val result = service.getAll()
             val recorded = server.takeRequest()
 
             assertEquals("GET", recorded.method)
             assertEquals("/apps/$TEST_APP_ID/devices", recorded.path)
-            assertEquals(2, result.size)
+            assertEquals(1, result.size)
+            assertEquals("TestDevice", result[0].deviceName)
         }
     }
 
@@ -552,14 +627,8 @@ class ContractTest {
         fun `create targets POST apps-appId-endpoints`() = runTest {
             val http = createHttpClient()
             val service = EndpointsService(http)
-            enqueue("""{
-                "slug":"abc123",
-                "status":"active",
-                "expires_at":1700000000,
-                "endpoint_path":"/events/abc123",
-                "hmac_secret":"secret-key",
-                "hmac_required":true
-            }""")
+            // Source: lambda/endpoints/index.js handleCreate (~line 221-232)
+            enqueue(FIXTURE_ENDPOINT_CREATED)
 
             val result = service.create()
             val recorded = server.takeRequest()
@@ -568,19 +637,15 @@ class ContractTest {
             assertEquals("/apps/$TEST_APP_ID/endpoints", recorded.path)
             assertEquals("abc123", result.slug)
             assertEquals("secret-key", result.hmacSecret)
+            assertEquals(true, result.hmacRequired)
         }
 
         @Test
         fun `revokeAndReplace targets POST apps-appId-endpoints-revoke_and_replace`() = runTest {
             val http = createHttpClient()
             val service = EndpointsService(http)
-            enqueue("""{
-                "old_slug":"old-slug",
-                "new_slug":"new-slug",
-                "new_endpoint_path":"/events/new-slug",
-                "revoked_expires_at":1700000000,
-                "new_expires_at":1700100000
-            }""")
+            // Source: lambda/endpoints/index.js handleRevokeAndReplace (~line 402-414)
+            enqueue(FIXTURE_ENDPOINT_REVOKE_AND_REPLACE)
 
             val result = service.revokeAndReplace("old-slug")
             val recorded = server.takeRequest()
@@ -595,7 +660,8 @@ class ContractTest {
         fun `revoke targets POST apps-appId-endpoints-revoke`() = runTest {
             val http = createHttpClient()
             val service = EndpointsService(http)
-            enqueue("""{"slug":"revoked-slug","revoked":true}""")
+            // Source: lambda/endpoints/index.js handleRevoke (~line 521-524)
+            enqueue(FIXTURE_ENDPOINT_REVOKE)
 
             val result = service.revoke("revoked-slug")
             val recorded = server.takeRequest()
@@ -609,7 +675,8 @@ class ContractTest {
         fun `postEvent targets POST events-slug`() = runTest {
             val http = createHttpClient()
             val service = EndpointsService(http)
-            enqueue("""{"slug":"my-slug","timestamp":1700000000,"expires_at":1700100000}""")
+            // Source: lambda/events/index.js POST handler (~line 238-246)
+            enqueue(FIXTURE_POST_EVENT)
 
             val result = service.postEvent("my-slug", """{"text":"hello"}""")
             val recorded = server.takeRequest()
@@ -623,7 +690,8 @@ class ContractTest {
         fun `postEvent with HMAC includes signature headers`() = runTest {
             val http = createHttpClient()
             val service = EndpointsService(http)
-            enqueue("""{"slug":"my-slug","timestamp":1700000000,"expires_at":1700100000}""")
+            // Source: lambda/events/index.js POST handler (~line 238-246)
+            enqueue(FIXTURE_POST_EVENT)
 
             service.postEvent("my-slug", """{"text":"hello"}""", hmacSecret = "secret")
             val recorded = server.takeRequest()
@@ -638,15 +706,8 @@ class ContractTest {
         fun `consumeEvent targets GET events-slug`() = runTest {
             val http = createHttpClient()
             val service = EndpointsService(http)
-            enqueue("""{
-                "slug":"my-slug",
-                "timestamp":1700000000,
-                "created_at":1700000000,
-                "expires_at":1700100000,
-                "text":"dictated text",
-                "keywords":["hello","world"],
-                "empty":false
-            }""")
+            // Source: lambda/events/index.js GET handler with data (~line 250-260)
+            enqueue(FIXTURE_CONSUME_EVENT)
 
             val result = service.consumeEvent("my-slug")
             val recorded = server.takeRequest()
@@ -668,19 +729,8 @@ class ContractTest {
         fun `list targets GET lookup-tables`() = runTest {
             val http = createHttpClient()
             val service = LookupTablesService(http)
-            enqueue("""{
-                "items":[{
-                    "lookup_table_id":"lt1",
-                    "name":"Cities",
-                    "description":"World cities",
-                    "schema_keys":["name","country"],
-                    "schema_key_count":2,
-                    "version":1,
-                    "storage_mode":"chunked",
-                    "chunk_count":3,
-                    "updated_at":1700000000
-                }]
-            }""")
+            // Source: lambda/lookup_tables/index.js list handler with toSummary (~line 867-880)
+            enqueue(FIXTURE_LOOKUP_TABLES_LIST)
 
             val result = service.list()
             val recorded = server.takeRequest()
@@ -695,22 +745,8 @@ class ContractTest {
         fun `get targets GET lookup-tables-lookupTableId`() = runTest {
             val http = createHttpClient()
             val service = LookupTablesService(http)
-            enqueue("""{
-                "lookup_table_id":"lt1",
-                "name":"Cities",
-                "version":2,
-                "storage_mode":"chunked",
-                "chunk_count":3,
-                "updated_at":1700000000,
-                "prompt":"Find cities by name",
-                "default_success_sentence":"Found {{name}} in {{country}}",
-                "chunk_encoding":"json",
-                "manifest_hash":"abc123",
-                "chunks":[
-                    {"index":0,"path":"/chunks/0","sha256":"hash0","byte_length":1024},
-                    {"index":1,"path":"/chunks/1","sha256":"hash1","byte_length":512}
-                ]
-            }""")
+            // Source: lambda/lookup_tables/index.js toClientDetail (~line 903-920)
+            enqueue(FIXTURE_LOOKUP_TABLE_DETAIL)
 
             val result = service.get("lt1")
             val recorded = server.takeRequest()
@@ -725,6 +761,7 @@ class ContractTest {
         fun `get URL-encodes lookup table IDs with special characters`() = runTest {
             val http = createHttpClient()
             val service = LookupTablesService(http)
+            // Source: lambda/lookup_tables/index.js toClientDetail (~line 903-920)
             enqueue("""{
                 "lookup_table_id":"lt/special",
                 "name":"Special",
@@ -747,7 +784,8 @@ class ContractTest {
         fun `getChunk targets GET lookup-tables-id-chunks-index`() = runTest {
             val http = createHttpClient()
             val service = LookupTablesService(http)
-            enqueue("""{"London":{"country":"UK","population":9000000}}""")
+            // Source: lambda/lookup_tables/index.js handleClientChunk (~line 134-138)
+            enqueue(FIXTURE_LOOKUP_TABLE_CHUNK)
 
             val result = service.getChunk("lt1", 0)
             val recorded = server.takeRequest()
@@ -761,6 +799,7 @@ class ContractTest {
         fun `getChunk with version includes version query param`() = runTest {
             val http = createHttpClient()
             val service = LookupTablesService(http)
+            // Source: lambda/lookup_tables/index.js handleClientChunk (~line 134-138)
             enqueue("""{"Paris":{"country":"FR"}}""")
 
             service.getChunk("lt1", 1, version = 3)
@@ -787,7 +826,8 @@ class ContractTest {
                 tokenStorage = InMemoryTokenStorage()
             )
             val client = MagicAppsClient(config)
-            enqueue("""{"message":"pong","requestId":"req-1"}""")
+            // Source: lambda/templates/index.js ok() helper (~line 1028)
+            enqueue(FIXTURE_PING)
 
             val result = client.ping()
             val recorded = server.takeRequest()
@@ -799,7 +839,7 @@ class ContractTest {
     }
 
     // ========================================================================
-    // Response deserialization robustness tests
+    // Response deserialization robustness tests (golden fixture shape validation)
     // ========================================================================
 
     @Nested
@@ -816,33 +856,26 @@ class ContractTest {
         }
 
         @Test
-        fun `ChatCompletionResponse handles full response shape`() {
-            val result = json.decodeFromString<ChatCompletionResponse>("""{
-                "id":"chatcmpl-abc",
-                "object":"chat.completion",
-                "created":1700000000,
-                "model":"gpt-4",
-                "choices":[
-                    {"index":0,"message":{"role":"assistant","content":"Hi"},"finish_reason":"stop"},
-                    {"index":1,"message":{"role":"assistant","content":"Hello"},"finish_reason":"stop"}
-                ],
-                "usage":{"prompt_tokens":10,"completion_tokens":20,"total_tokens":30}
-            }""")
-            assertEquals(2, result.choices.size)
-            assertEquals(30, result.usage?.totalTokens)
+        fun `ChatCompletionResponse handles normalized Lambda response shape`() {
+            // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
+            // Real Lambda returns { id, provider, model, choices, usage } with usage containing
+            // input_tokens/output_tokens/total_tokens/estimated_cost_usd
+            val result = json.decodeFromString<ChatCompletionResponse>(FIXTURE_CHAT_COMPLETION)
+            assertEquals(1, result.choices.size)
+            assertEquals("Hello!", result.choices[0].message.content)
+            assertEquals("stop", result.choices[0].finishReason)
         }
 
         @Test
-        fun `TemplateListResponse handles items field alias`() {
-            val result = json.decodeFromString<TemplateListResponse>(
-                """{"items":[{"name":"Template via items"}],"count":1}"""
-            )
+        fun `TemplateListResponse handles items field from real Lambda`() {
+            // Source: lambda/templates/index.js handleList (~line 860) - returns { items: [] }
+            val result = json.decodeFromString<TemplateListResponse>(FIXTURE_TEMPLATES_LIST)
             assertEquals(1, result.allTemplates.size)
-            assertEquals("Template via items", result.allTemplates[0].name)
+            assertEquals("Test Template", result.allTemplates[0].name)
         }
 
         @Test
-        fun `TemplateListResponse handles templates field`() {
+        fun `TemplateListResponse handles legacy templates field`() {
             val result = json.decodeFromString<TemplateListResponse>(
                 """{"templates":[{"name":"Template via templates"}],"count":1}"""
             )
@@ -850,12 +883,15 @@ class ContractTest {
         }
 
         @Test
-        fun `DeviceCatalogResponse handles both field names`() {
-            val itemsResult = json.decodeFromString<DeviceCatalogResponse>(
-                """{"items":[{"device_name":"Dev1"}],"count":1}"""
-            )
-            assertEquals(1, itemsResult.allDevices.size)
+        fun `DeviceCatalogResponse handles items field from real Lambda`() {
+            // Source: lambda/devices/index.js (~line 22-26) - returns { items: [] }
+            val result = json.decodeFromString<DeviceCatalogResponse>(FIXTURE_DEVICES)
+            assertEquals(1, result.allDevices.size)
+            assertEquals("TestDevice", result.allDevices[0].deviceName)
+        }
 
+        @Test
+        fun `DeviceCatalogResponse handles legacy devices field`() {
             val devicesResult = json.decodeFromString<DeviceCatalogResponse>(
                 """{"devices":[{"device_name":"Dev2"}],"count":1}"""
             )
@@ -863,50 +899,26 @@ class ContractTest {
         }
 
         @Test
-        fun `ConsumedEvent handles empty event`() {
-            val result = json.decodeFromString<ConsumedEvent>(
-                """{"slug":"s1","empty":true}"""
-            )
+        fun `ConsumedEvent handles empty event from real Lambda`() {
+            // Source: lambda/events/index.js GET handler empty slot (~line 262-267)
+            val result = json.decodeFromString<ConsumedEvent>(FIXTURE_CONSUME_EVENT_EMPTY)
             assertEquals(true, result.empty)
-            assertNull(result.text)
+            assertEquals("George Lucas", result.text)
         }
 
         @Test
-        fun `LookupTableDetail handles full manifest response`() {
-            val result = json.decodeFromString<LookupTableDetail>("""{
-                "lookup_table_id":"lt1",
-                "name":"Test",
-                "schema_keys":["a","b"],
-                "schema_key_count":2,
-                "schema_keys_truncated":false,
-                "version":3,
-                "payload_hash":"hash",
-                "storage_mode":"chunked",
-                "chunk_count":2,
-                "updated_at":1700000000,
-                "prompt":"Find by name",
-                "default_success_sentence":"Found {{name}}",
-                "default_fail_sentence":"Not found",
-                "chunk_encoding":"json",
-                "manifest_hash":"mhash",
-                "chunks":[
-                    {"index":0,"path":"/c/0","sha256":"h0","byte_length":100},
-                    {"index":1,"path":"/c/1","sha256":"h1","byte_length":200}
-                ]
-            }""")
-            assertEquals(3, result.version)
+        fun `LookupTableDetail handles full manifest response from real Lambda`() {
+            // Source: lambda/lookup_tables/index.js toClientDetail (~line 903-920)
+            val result = json.decodeFromString<LookupTableDetail>(FIXTURE_LOOKUP_TABLE_DETAIL)
+            assertEquals(2, result.version)
             assertEquals(2, result.chunks.size)
-            assertEquals("Found {{name}}", result.defaultSuccessSentence)
+            assertEquals("Found {{name}} in {{country}}", result.defaultSuccessSentence)
         }
 
         @Test
-        fun `EmbeddingResponse deserializes correctly`() {
-            val result = json.decodeFromString<EmbeddingResponse>("""{
-                "object":"list",
-                "data":[{"object":"embedding","embedding":[0.1,0.2,0.3],"index":0}],
-                "model":"text-embedding-ada-002",
-                "usage":{"prompt_tokens":5,"total_tokens":5}
-            }""")
+        fun `EmbeddingResponse deserializes normalized Lambda response`() {
+            // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
+            val result = json.decodeFromString<EmbeddingResponse>(FIXTURE_EMBEDDING)
             assertEquals(3, result.data[0].embedding.size)
             assertEquals(0.2, result.data[0].embedding[1])
         }
@@ -931,40 +943,47 @@ class ContractTest {
         }
 
         @Test
-        fun `CreateEndpointResponse deserializes correctly`() {
-            val result = json.decodeFromString<CreateEndpointResponse>("""{
-                "slug":"abc",
-                "status":"active",
-                "expires_at":1700000000,
-                "endpoint_path":"/events/abc"
-            }""")
-            assertEquals("abc", result.slug)
-            assertNull(result.hmacSecret)
-            assertNull(result.hmacRequired)
+        fun `CreateEndpointResponse deserializes real Lambda shape`() {
+            // Source: lambda/endpoints/index.js handleCreate (~line 221-232)
+            val result = json.decodeFromString<CreateEndpointResponse>(FIXTURE_ENDPOINT_CREATED)
+            assertEquals("abc123", result.slug)
+            assertEquals("secret-key", result.hmacSecret)
+            assertEquals(true, result.hmacRequired)
         }
 
         @Test
-        fun `RevokeAndReplaceResponse deserializes correctly`() {
-            val result = json.decodeFromString<RevokeAndReplaceResponse>("""{
-                "old_slug":"old",
-                "new_slug":"new",
-                "new_endpoint_path":"/events/new",
-                "revoked_expires_at":1700000000,
-                "new_expires_at":1700100000,
-                "hmac_secret":"sec",
-                "hmac_required":true
-            }""")
-            assertEquals("old", result.oldSlug)
-            assertEquals("sec", result.hmacSecret)
+        fun `RevokeAndReplaceResponse deserializes real Lambda shape`() {
+            // Source: lambda/endpoints/index.js handleRevokeAndReplace (~line 402-414)
+            val result = json.decodeFromString<RevokeAndReplaceResponse>(FIXTURE_ENDPOINT_REVOKE_AND_REPLACE)
+            assertEquals("old-slug", result.oldSlug)
+            assertEquals("new-hmac-secret", result.hmacSecret)
         }
 
         @Test
-        fun `RegistryAppsResponse handles apps field`() {
-            val result = json.decodeFromString<RegistryAppsResponse>("""{
-                "apps":[{"app_id":"a1","name":"App","slug":"app"}]
-            }""")
+        fun `RegistryAppsResponse handles items field from real Lambda`() {
+            // Source: lambda/templates/index.js handleRegistryApps (~line 515-518)
+            val result = json.decodeFromString<RegistryAppsResponse>(FIXTURE_REGISTRY_APPS)
             assertEquals(1, result.allApps.size)
-            assertEquals("app", result.allApps[0].slug)
+            assertEquals("app-one", result.allApps[0].slug)
+        }
+
+        @Test
+        fun `AiUsageSummary deserializes real Lambda shape`() {
+            // Source: lambda/ai_proxy/index.js handleGetUsageSummary (~line 457-474)
+            val result = json.decodeFromString<AiUsageSummary>(FIXTURE_AI_USAGE_SUMMARY)
+            assertEquals(1, result.summaries?.size)
+            assertEquals("MONTHLY#2026-03", result.summaries?.get(0)?.period)
+            assertEquals(150, result.totalRequests)
+        }
+
+        @Test
+        fun `AiUsageResponse deserializes real Lambda shape`() {
+            // Source: lambda/ai_proxy/index.js handleGetUsage (~line 436-454)
+            val result = json.decodeFromString<AiUsageResponse>(FIXTURE_AI_USAGE)
+            assertEquals(1, result.usage.size)
+            assertEquals("usage-001", result.usage[0].usageId)
+            assertEquals("openai", result.usage[0].providerId)
+            assertEquals(1, result.count)
         }
     }
 
@@ -1046,7 +1065,8 @@ class ContractTest {
         fun `template create sends name and description`() = runTest {
             val http = createHttpClient()
             val service = TemplatesService(http)
-            enqueue("""{"template_id":"t1","name":"My Template"}""")
+            // Source: lambda/templates/index.js handleCreate (~line 963)
+            enqueue(FIXTURE_TEMPLATE_CREATED)
 
             service.create("My Template", description = "A description")
             val recorded = server.takeRequest()
@@ -1060,7 +1080,8 @@ class ContractTest {
         fun `endpoint revoke sends slug in body`() = runTest {
             val http = createHttpClient()
             val service = EndpointsService(http)
-            enqueue("""{"slug":"s1","revoked":true}""")
+            // Source: lambda/endpoints/index.js handleRevoke (~line 521-524)
+            enqueue(FIXTURE_ENDPOINT_REVOKE)
 
             service.revoke("s1")
             val recorded = server.takeRequest()
@@ -1073,7 +1094,8 @@ class ContractTest {
         fun `AI chat completion sends correct request structure`() = runTest {
             val http = createHttpClient()
             val service = AiService(http)
-            enqueue("""{"choices":[{"index":0,"message":{"role":"assistant","content":"ok"}}]}""")
+            // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
+            enqueue(FIXTURE_CHAT_COMPLETION)
 
             service.createChatCompletion(
                 ChatCompletionRequest(
@@ -1102,7 +1124,8 @@ class ContractTest {
         fun `BEARER endpoints include Authorization header`() = runTest {
             val http = createHttpClient(accessToken = "my-bearer-token")
             val service = TemplatesService(http)
-            enqueue("""{"template_id":"t1","name":"Test"}""")
+            // Source: lambda/templates/index.js handleCreate (~line 963)
+            enqueue(FIXTURE_TEMPLATE_CREATED)
 
             service.create("Test")
             val recorded = server.takeRequest()
@@ -1116,7 +1139,8 @@ class ContractTest {
         fun `NONE endpoints do not include Authorization header`() = runTest {
             val http = createHttpClient(accessToken = null, ownerToken = null)
             val service = TemplatesService(http)
-            enqueue("""{"templates":[],"count":0}""")
+            // Source: lambda/templates/index.js handleList (~line 860)
+            enqueue("""{"items":[],"count":0}""")
 
             service.list()
             val recorded = server.takeRequest()
@@ -1128,7 +1152,8 @@ class ContractTest {
         fun `OWNER endpoints include owner token`() = runTest {
             val http = createHttpClient(ownerToken = "my-owner-token")
             val service = EndpointsService(http)
-            enqueue("""{"slug":"s1","status":"active","expires_at":1700000000,"endpoint_path":"/events/s1"}""")
+            // Source: lambda/endpoints/index.js handleCreate (~line 221-232)
+            enqueue(FIXTURE_ENDPOINT_CREATED)
 
             service.create()
             val recorded = server.takeRequest()
@@ -1142,7 +1167,8 @@ class ContractTest {
         fun `all requests include X-App-Id header`() = runTest {
             val http = createHttpClient()
             val service = DevicesService(http)
-            enqueue("""{"devices":[]}""")
+            // Source: lambda/devices/index.js (~line 22-26)
+            enqueue("""{"items":[]}""")
 
             service.list()
             val recorded = server.takeRequest()
