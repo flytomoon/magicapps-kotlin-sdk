@@ -596,7 +596,8 @@ data class TemplateParameter(
     /** User-facing label when value_type is user_input. */
     val label: String? = null,
     val required: Boolean? = null,
-    val default: String? = null,
+    @SerialName("default")
+    val defaultValue: String? = null,
     val example: String? = null,
     val encoding: String? = null
 )
