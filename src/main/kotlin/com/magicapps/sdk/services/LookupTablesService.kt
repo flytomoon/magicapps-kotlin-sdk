@@ -1,59 +1,16 @@
 package com.magicapps.sdk.services
 
+import com.magicapps.sdk.LookupTableDetail
+import com.magicapps.sdk.LookupTableSummary
 import com.magicapps.sdk.core.*
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
 // --- Lookup Table Types ---
 
 @Serializable
-data class LookupTableSummary(
-    @SerialName("lookup_table_id") val lookupTableId: String,
-    val name: String,
-    val description: String? = null,
-    @SerialName("schema_keys") val schemaKeys: List<String> = emptyList(),
-    @SerialName("schema_key_count") val schemaKeyCount: Int = 0,
-    @SerialName("schema_keys_truncated") val schemaKeysTruncated: Boolean = false,
-    val version: Int = 1,
-    @SerialName("payload_hash") val payloadHash: String = "",
-    @SerialName("storage_mode") val storageMode: String = "chunked",
-    @SerialName("chunk_count") val chunkCount: Int = 0,
-    @SerialName("updated_at") val updatedAt: Long = 0
-)
-
-@Serializable
 data class LookupTableListResponse(
     val items: List<LookupTableSummary> = emptyList()
-)
-
-@Serializable
-data class LookupTableChunkRef(
-    val index: Int,
-    val path: String,
-    val sha256: String = "",
-    @SerialName("byte_length") val byteLength: Int = 0
-)
-
-@Serializable
-data class LookupTableDetail(
-    @SerialName("lookup_table_id") val lookupTableId: String,
-    val name: String,
-    val description: String? = null,
-    @SerialName("schema_keys") val schemaKeys: List<String> = emptyList(),
-    @SerialName("schema_key_count") val schemaKeyCount: Int = 0,
-    @SerialName("schema_keys_truncated") val schemaKeysTruncated: Boolean = false,
-    val version: Int = 1,
-    @SerialName("payload_hash") val payloadHash: String = "",
-    @SerialName("storage_mode") val storageMode: String = "chunked",
-    @SerialName("chunk_count") val chunkCount: Int = 0,
-    @SerialName("updated_at") val updatedAt: Long = 0,
-    val prompt: String? = null,
-    @SerialName("default_success_sentence") val defaultSuccessSentence: String? = null,
-    @SerialName("default_fail_sentence") val defaultFailSentence: String? = null,
-    @SerialName("chunk_encoding") val chunkEncoding: String = "json",
-    @SerialName("manifest_hash") val manifestHash: String = "",
-    val chunks: List<LookupTableChunkRef> = emptyList()
 )
 
 // --- Lookup Tables Service ---
@@ -104,7 +61,7 @@ class LookupTablesService(private val http: SdkHttpClient) : ServiceModule {
         val detail = get(lookupTableId)
         val result = mutableMapOf<String, kotlinx.serialization.json.JsonElement>()
 
-        for (i in 0 until detail.chunkCount) {
+        for (i in 0 until (detail.chunkCount ?: 0)) {
             val chunk = getChunk(lookupTableId, i, detail.version)
             for ((key, value) in chunk) {
                 result[key] = value

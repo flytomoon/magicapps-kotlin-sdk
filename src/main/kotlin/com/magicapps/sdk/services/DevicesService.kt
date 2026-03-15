@@ -1,34 +1,19 @@
 package com.magicapps.sdk.services
 
+import com.magicapps.sdk.Device
 import com.magicapps.sdk.core.*
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
 
 // --- Device Types ---
 
 @Serializable
-data class DeviceEntry(
-    @SerialName("device_id") val deviceId: String? = null,
-    @SerialName("device_name") val deviceName: String,
-    @SerialName("display_name") val displayName: String? = null,
-    @SerialName("device_type") val deviceType: String? = null,
-    @SerialName("bluetooth_uuid") val bluetoothUuid: String? = null,
-    val tags: List<String>? = null,
-    val visibility: String? = null,
-    val source: String? = null,
-    val category: String? = null,
-    val specs: JsonObject? = null
-)
-
-@Serializable
 data class DeviceCatalogResponse(
-    val devices: List<DeviceEntry>? = null,
-    val items: List<DeviceEntry>? = null,
+    val devices: List<Device>? = null,
+    val items: List<Device>? = null,
     val count: Int? = null
 ) {
     /** Convenience accessor returning devices from whichever field the API uses. */
-    val allDevices: List<DeviceEntry> get() = devices ?: items ?: emptyList()
+    val allDevices: List<Device> get() = devices ?: items ?: emptyList()
 }
 
 /**
@@ -46,5 +31,5 @@ class DevicesService(private val http: SdkHttpClient) : ServiceModule {
         http.get("/apps/${http.appId}/devices", authMode = AuthMode.NONE)
 
     /** Convenience: get a flat list of all devices. */
-    suspend fun getAll(): List<DeviceEntry> = list().allDevices
+    suspend fun getAll(): List<Device> = list().allDevices
 }

@@ -1,22 +1,11 @@
 package com.magicapps.sdk.services
 
+import com.magicapps.sdk.Template
 import com.magicapps.sdk.core.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
 
 // --- Template Types ---
-
-@Serializable
-data class Template(
-    @SerialName("template_id") val templateId: String? = null,
-    @SerialName("app_id") val appId: String? = null,
-    val name: String,
-    val description: String? = null,
-    val content: JsonObject? = null,
-    @SerialName("created_at") val createdAt: String? = null,
-    @SerialName("updated_at") val updatedAt: String? = null
-)
 
 @Serializable
 data class TemplateListResponse(

@@ -754,7 +754,7 @@ class ContractTest {
             assertEquals("GET", recorded.method)
             assertEquals("/lookup-tables/lt1", recorded.path)
             assertEquals("Cities", result.name)
-            assertEquals(2, result.chunks.size)
+            assertEquals(2, result.chunks?.size)
         }
 
         @Test
@@ -911,7 +911,7 @@ class ContractTest {
             // Source: lambda/lookup_tables/index.js toClientDetail (~line 903-920)
             val result = json.decodeFromString<LookupTableDetail>(FIXTURE_LOOKUP_TABLE_DETAIL)
             assertEquals(2, result.version)
-            assertEquals(2, result.chunks.size)
+            assertEquals(2, result.chunks?.size)
             assertEquals("Found {{name}} in {{country}}", result.defaultSuccessSentence)
         }
 
