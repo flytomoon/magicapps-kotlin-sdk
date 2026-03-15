@@ -227,6 +227,9 @@ data class Template(
     /** > */
     @SerialName("source_mode")
     val sourceMode: String? = null,
+    /** Auto-derived behavioral classification. Read-only — computed from template_type, http_get_mode, and template identity. */
+    @SerialName("behavior_role")
+    val behaviorRole: String? = null,
     /** Configuration for api_poll source_mode. Only applies when source_mode=api_poll. */
     @SerialName("poll_config")
     val pollConfig: Map<String, @Contextual Any>? = null,
