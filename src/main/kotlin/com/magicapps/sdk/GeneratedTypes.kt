@@ -99,6 +99,25 @@ data class LookupTableChunk(
 
 @Serializable
 data class LookupTableDetail(
+    @SerialName("lookup_table_id")
+    val lookupTableId: String? = null,
+    val name: String? = null,
+    val description: String? = null,
+    @SerialName("schema_keys")
+    val schemaKeys: List<String>? = null,
+    @SerialName("schema_key_count")
+    val schemaKeyCount: Int? = null,
+    @SerialName("schema_keys_truncated")
+    val schemaKeysTruncated: Boolean? = null,
+    val version: Int? = null,
+    @SerialName("payload_hash")
+    val payloadHash: String? = null,
+    @SerialName("storage_mode")
+    val storageMode: String? = null,
+    @SerialName("chunk_count")
+    val chunkCount: Int? = null,
+    @SerialName("updated_at")
+    val updatedAt: Int? = null,
     /** Present on detail only; omitted from summary list. */
     val prompt: String? = null,
     /** Optional templated success sentence using {{path.to.key}} tokens. */
@@ -112,10 +131,42 @@ data class LookupTableDetail(
     @SerialName("manifest_hash")
     val manifestHash: String? = null,
     val chunks: List<LookupTableChunk>? = null
-) // extends: LookupTableSummary, LookupTableChunk
+)
 
 @Serializable
 data class AdminLookupTableDetail(
+    @SerialName("lookup_table_id")
+    val lookupTableId: String? = null,
+    val name: String? = null,
+    val description: String? = null,
+    @SerialName("schema_keys")
+    val schemaKeys: List<String>? = null,
+    @SerialName("schema_key_count")
+    val schemaKeyCount: Int? = null,
+    @SerialName("schema_keys_truncated")
+    val schemaKeysTruncated: Boolean? = null,
+    val version: Int? = null,
+    @SerialName("payload_hash")
+    val payloadHash: String? = null,
+    @SerialName("storage_mode")
+    val storageMode: String? = null,
+    @SerialName("chunk_count")
+    val chunkCount: Int? = null,
+    @SerialName("updated_at")
+    val updatedAt: Int? = null,
+    /** Present on detail only; omitted from summary list. */
+    val prompt: String? = null,
+    /** Optional templated success sentence using {{path.to.key}} tokens. */
+    @SerialName("default_success_sentence")
+    val defaultSuccessSentence: String? = null,
+    /** Optional fallback fail sentence. */
+    @SerialName("default_fail_sentence")
+    val defaultFailSentence: String? = null,
+    @SerialName("chunk_encoding")
+    val chunkEncoding: String? = null,
+    @SerialName("manifest_hash")
+    val manifestHash: String? = null,
+    val chunks: List<LookupTableChunk>? = null,
     @SerialName("allowlisted_apps")
     val allowlistedApps: List<String>? = null,
     @SerialName("client_targets")
@@ -133,7 +184,7 @@ data class AdminLookupTableDetail(
     val payloadJson: Map<String, @Contextual Any>? = null,
     @SerialName("manifest_key")
     val manifestKey: String? = null
-) // extends: LookupTableDetail
+)
 
 @Serializable
 data class AdminLookupTableUpsertRequest(
