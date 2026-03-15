@@ -133,6 +133,7 @@ internal class PinningTrustManager(
 /**
  * Creates an SSLContext configured with certificate pinning.
  */
+@PublishedApi
 internal object CertificatePinnerFactory {
     fun createPinnedSSLContext(config: CertificatePinningConfig): SSLContext {
         val pinHashes = config.effectivePins.map { pin ->

@@ -4,6 +4,7 @@
  */
 package com.magicapps.sdk
 
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -17,7 +18,7 @@ data class PlatformHealthResponse(
     /** Deployment environment identifier (dev, staging, prod) */
     val environment: String,
     /** Per-service health check results */
-    val checks: Map<String, Any>,
+    val checks: Map<String, @Contextual Any>,
     val required: String? = null,
     /** Generic status message without secrets or internal details */
     val properties: String? = null
@@ -25,7 +26,7 @@ data class PlatformHealthResponse(
 
 @Serializable
 data class AuthTokenResponse(
-    val user: Map<String, Any>? = null,
+    val user: Map<String, @Contextual Any>? = null,
     val id: String? = null,
     val email: String? = null,
     val status: String? = null,
@@ -129,7 +130,7 @@ data class AdminLookupTableDetail(
     @SerialName("purge_at")
     val purgeAt: Int? = null,
     @SerialName("payload_json")
-    val payloadJson: Map<String, Any>? = null,
+    val payloadJson: Map<String, @Contextual Any>? = null,
     @SerialName("manifest_key")
     val manifestKey: String? = null
 ) // extends: LookupTableDetail
@@ -155,7 +156,7 @@ data class AdminLookupTableUpsertRequest(
     /** Required on PATCH for optimistic locking. */
     val version: Int? = null,
     @SerialName("payload_json")
-    val payloadJson: Map<String, Any>
+    val payloadJson: Map<String, @Contextual Any>
 )
 
 @Serializable
@@ -172,6 +173,36 @@ data class Template(
     val templateName: String? = null,
     @SerialName("template_type")
     val templateType: String? = null,
+    /** > */
+    @SerialName("source_mode")
+    val sourceMode: String? = null,
+    /** Configuration for api_poll source_mode. Only applies when source_mode=api_poll. */
+    @SerialName("poll_config")
+    val pollConfig: Map<String, @Contextual Any>? = null,
+    /** > */
+    @SerialName("poll_mode")
+    val pollMode: String? = null,
+    /** Maximum time in milliseconds to wait for a result (1ms–300000ms / 5 min). */
+    @SerialName("timeout_ms")
+    val timeoutMs: Int? = null,
+    /** Maximum number of poll attempts before giving up (1–100). */
+    @SerialName("max_attempts")
+    val maxAttempts: Int? = null,
+    /** Delay in milliseconds between poll attempts (0–60000ms). */
+    @SerialName("backoff_ms")
+    val backoffMs: Int? = null,
+    /** > */
+    @SerialName("empty_result_behavior")
+    val emptyResultBehavior: String? = null,
+    /** API-poll-specific response parsing configuration. Only applies when source_mode=api_poll. */
+    @SerialName("api_poll_config")
+    val apiPollConfig: Map<String, @Contextual Any>? = null,
+    /** > */
+    @SerialName("response_type")
+    val responseType: String? = null,
+    /** > */
+    @SerialName("response_path")
+    val responsePath: String? = null,
     /** High-level grouping (e.g., custom_core, built_integration) */
     val group: String? = null,
     /** End-user facing description shown publicly */
@@ -211,7 +242,7 @@ data class Template(
     @SerialName("support_url")
     val supportUrl: String? = null,
     @SerialName("app_store_urls")
-    val appStoreUrls: Map<String, Any>? = null,
+    val appStoreUrls: Map<String, @Contextual Any>? = null,
     val apple: String? = null,
     val google: String? = null,
     @SerialName("icon_url")
@@ -249,7 +280,7 @@ data class Template(
     @SerialName("endpoint_pattern")
     val endpointPattern: String? = null,
     val parameters: List<TemplateParameter>? = null,
-    val metadata: Map<String, Any>? = null,
+    val metadata: Map<String, @Contextual Any>? = null,
     @SerialName("created_at")
     val createdAt: Double? = null,
     @SerialName("updated_at")
@@ -280,7 +311,7 @@ data class AppIntegration(
     @SerialName("endpoint_pattern")
     val endpointPattern: String? = null,
     val parameters: List<TemplateParameter>? = null,
-    val metadata: Map<String, Any>? = null,
+    val metadata: Map<String, @Contextual Any>? = null,
     @SerialName("created_by_name")
     val createdByName: String? = null,
     @SerialName("auth_type")
@@ -320,7 +351,7 @@ data class AppIntegrationV2(
     @SerialName("endpoint_pattern")
     val endpointPattern: String? = null,
     val parameters: List<TemplateParameter>? = null,
-    val metadata: Map<String, Any>? = null,
+    val metadata: Map<String, @Contextual Any>? = null,
     @SerialName("created_by_name")
     val createdByName: String? = null,
     @SerialName("auth_type")
@@ -372,7 +403,7 @@ data class App(
     @SerialName("support_url")
     val supportUrl: String? = null,
     @SerialName("app_store_urls")
-    val appStoreUrls: Map<String, Any>? = null,
+    val appStoreUrls: Map<String, @Contextual Any>? = null,
     val apple: String? = null,
     val google: String? = null,
     @SerialName("icon_url")
@@ -417,7 +448,7 @@ data class AppV2(
     @SerialName("support_url")
     val supportUrl: String? = null,
     @SerialName("app_store_urls")
-    val appStoreUrls: Map<String, Any>? = null,
+    val appStoreUrls: Map<String, @Contextual Any>? = null,
     val apple: String? = null,
     val google: String? = null,
     @SerialName("icon_url")
@@ -486,7 +517,7 @@ data class TemplateInput(
     @SerialName("support_url")
     val supportUrl: String? = null,
     @SerialName("app_store_urls")
-    val appStoreUrls: Map<String, Any>? = null,
+    val appStoreUrls: Map<String, @Contextual Any>? = null,
     val apple: String? = null,
     val google: String? = null,
     @SerialName("icon_url")
@@ -503,7 +534,7 @@ data class TemplateInput(
     val submittedAt: String? = null,
     val visibility: TemplateVisibility? = null,
     val parameters: List<TemplateParameter>? = null,
-    val metadata: Map<String, Any>? = null
+    val metadata: Map<String, @Contextual Any>? = null
 )
 
 /** Mutable fields admins can update on approved templates; approved_at/is_new_until remain unchanged. */
@@ -538,7 +569,7 @@ data class TemplateAdminUpdate(
     @SerialName("support_url")
     val supportUrl: String? = null,
     @SerialName("app_store_urls")
-    val appStoreUrls: Map<String, Any>? = null,
+    val appStoreUrls: Map<String, @Contextual Any>? = null,
     val apple: String? = null,
     val google: String? = null,
     @SerialName("icon_url")
@@ -582,7 +613,7 @@ data class SetupField(
     val inputMode: String? = null,
     @SerialName("expected_format")
     val expectedFormat: String? = null,
-    val validation: Map<String, Any>? = null,
+    val validation: Map<String, @Contextual Any>? = null,
     @SerialName("is_secret")
     val isSecret: Boolean? = null,
     @SerialName("allow_voice_input")
@@ -619,7 +650,7 @@ data class Device(
     val model: String? = null,
     @SerialName("allowed_app_ids")
     val allowedAppIds: List<String>? = null,
-    val metadata: Map<String, Any>? = null,
+    val metadata: Map<String, @Contextual Any>? = null,
     @SerialName("created_at")
     val createdAt: Double? = null,
     @SerialName("updated_at")
@@ -653,12 +684,12 @@ data class DeviceInput(
     @SerialName("support_url")
     val supportUrl: String? = null,
     @SerialName("app_store_urls")
-    val appStoreUrls: Map<String, Any>? = null,
+    val appStoreUrls: Map<String, @Contextual Any>? = null,
     val apple: String? = null,
     val google: String? = null,
     @SerialName("icon_url")
     val iconUrl: String? = null,
-    val metadata: Map<String, Any>? = null
+    val metadata: Map<String, @Contextual Any>? = null
 )
 
 @Serializable
@@ -719,7 +750,7 @@ data class SubmissionAdminUpdate(
     @SerialName("support_url")
     val supportUrl: String? = null,
     @SerialName("app_store_urls")
-    val appStoreUrls: Map<String, Any>? = null,
+    val appStoreUrls: Map<String, @Contextual Any>? = null,
     val apple: String? = null,
     val google: String? = null,
     @SerialName("icon_url")
@@ -752,7 +783,7 @@ data class SubmissionAdminUpdate(
     val deviceType: String? = null,
     @SerialName("allowed_app_ids")
     val allowedAppIds: List<String>? = null,
-    val metadata: Map<String, Any>? = null
+    val metadata: Map<String, @Contextual Any>? = null
 )
 
 @Serializable

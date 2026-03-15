@@ -15,12 +15,12 @@ import kotlin.math.pow
 class SdkHttpClient(config: SdkConfig) {
     val tokenManager = TokenManager(config)
     private val baseUrl = config.baseUrl.trimEnd('/')
-    internal val appId = config.appId
-    private val defaultRetries = config.retries
-    private val retryDelayMs = config.retryDelayMs
-    private val json = Json { ignoreUnknownKeys = true }
+    @PublishedApi internal val appId = config.appId
+    @PublishedApi internal val defaultRetries = config.retries
+    @PublishedApi internal val retryDelayMs = config.retryDelayMs
+    @PublishedApi internal val json = Json { ignoreUnknownKeys = true }
     /** Pre-built SSL context with certificate pinning, or null if pinning is disabled. */
-    private val pinnedSSLContext: SSLContext? = config.certificatePinning?.let { pinConfig ->
+    @PublishedApi internal val pinnedSSLContext: SSLContext? = config.certificatePinning?.let { pinConfig ->
         if (pinConfig.enabled) CertificatePinnerFactory.createPinnedSSLContext(pinConfig) else null
     }
 
