@@ -23,21 +23,22 @@ class MagicAppsClientTest {
 
     @Test
     fun `Template deserializes from JSON`() {
+        // Source: openapi.yaml Template schema — template_name, created_at/updated_at are type: number (epoch)
         val jsonStr = """
         {
             "template_id": "tmpl-1",
             "app_id": "test-app",
-            "name": "Test Template",
+            "template_name": "Test Template",
             "description": null,
-            "created_at": "2025-01-01T00:00:00Z",
-            "updated_at": "2025-01-01T00:00:00Z"
+            "created_at": 1735689600,
+            "updated_at": 1735689600
         }
         """.trimIndent()
 
         val template = json.decodeFromString<Template>(jsonStr)
         assertEquals("tmpl-1", template.templateId)
         assertEquals("test-app", template.appId)
-        assertEquals("Test Template", template.name)
+        assertEquals("Test Template", template.templateName)
         assertNull(template.description)
     }
 

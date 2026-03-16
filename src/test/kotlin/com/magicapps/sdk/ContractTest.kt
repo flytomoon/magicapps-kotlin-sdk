@@ -54,13 +54,13 @@ class ContractTest {
         const val FIXTURE_PING = """{"message":"pong","requestId":"req-abc123"}"""
 
         // Source: lambda/templates/index.js handleList (~line 860) - returns { items: Template[] }
-        const val FIXTURE_TEMPLATES_LIST = """{"items":[{"template_id":"t1","app_id":"test-app","name":"Test Template","slug":"test-template","description":"A test template","created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z"}],"count":1}"""
+        const val FIXTURE_TEMPLATES_LIST = """{"items":[{"template_id":"t1","app_id":"test-app","template_name":"Test Template","slug":"test-template","description":"A test template","created_at":1735689600,"updated_at":1735689600}],"count":1}"""
 
         // Source: lambda/templates/index.js handleGet (~line 880) - returns single template
-        const val FIXTURE_TEMPLATE = """{"template_id":"t1","app_id":"test-app","name":"Test","description":"A test template","created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z"}"""
+        const val FIXTURE_TEMPLATE = """{"template_id":"t1","app_id":"test-app","template_name":"Test","description":"A test template","created_at":1735689600,"updated_at":1735689600}"""
 
         // Source: lambda/templates/index.js handleCreate (~line 963)
-        const val FIXTURE_TEMPLATE_CREATED = """{"template_id":"t2","app_id":"test-app","name":"New Template","description":"desc","created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z"}"""
+        const val FIXTURE_TEMPLATE_CREATED = """{"template_id":"t2","app_id":"test-app","template_name":"New Template","description":"desc","created_at":1735689600,"updated_at":1735689600}"""
 
         // Source: lambda/templates/index.js handleRegistryApps (~line 515-518) via toCardApp (~line 571-591)
         // Returns { items: CardApp[] }
@@ -89,7 +89,7 @@ class ContractTest {
 
         // Source: lambda/devices/index.js (~line 22-26)
         // Returns { items: Device[] }
-        const val FIXTURE_DEVICES = """{"items":[{"device_id":"d1","device_name":"TestDevice","display_name":"Test Device","device_type":"bluetooth","tags":["ios"],"os":"iOS","manufacturer":"Apple"}],"count":1}"""
+        const val FIXTURE_DEVICES = """{"items":[{"id":"d1","device_name":"TestDevice","display_name":"Test Device","device_type":"bluetooth","tags":["ios"],"os":"iOS","manufacturer":"Apple"}],"count":1}"""
 
         // Source: lambda/endpoints/index.js handleCreate (~line 221-232)
         const val FIXTURE_ENDPOINT_CREATED = """{"slug":"abc123","status":"active","expires_at":1749676000,"endpoint_path":"/events/abc123","hmac_secret":"secret-key","hmac_required":true}"""
@@ -514,7 +514,7 @@ class ContractTest {
 
             assertEquals("GET", recorded.method)
             assertEquals("/apps/$TEST_APP_ID/templates/t1", recorded.path)
-            assertEquals("Test", result.name)
+            assertEquals("Test", result.templateName)
         }
 
         @Test
@@ -537,14 +537,14 @@ class ContractTest {
             val http = createHttpClient()
             val service = TemplatesService(http)
             // Source: lambda/templates/index.js handleUpdate
-            enqueue("""{"template_id":"t1","name":"Updated","updated_at":"2025-06-01T00:00:00Z"}""")
+            enqueue("""{"template_id":"t1","template_name":"Updated","updated_at":1748736000}""")
 
             val result = service.update("t1", name = "Updated")
             val recorded = server.takeRequest()
 
             assertEquals("PUT", recorded.method)
             assertEquals("/apps/$TEST_APP_ID/templates/t1", recorded.path)
-            assertEquals("Updated", result.name)
+            assertEquals("Updated", result.templateName)
         }
 
         @Test
@@ -597,7 +597,7 @@ class ContractTest {
             assertEquals("GET", recorded.method)
             assertEquals("/apps/$TEST_APP_ID/devices", recorded.path)
             assertEquals(1, result.allDevices.size)
-            assertEquals("d1", result.allDevices[0].deviceId)
+            assertEquals("d1", result.allDevices[0].id)
         }
 
         @Test
@@ -871,7 +871,7 @@ class ContractTest {
             // Source: lambda/templates/index.js handleList (~line 860) - returns { items: [] }
             val result = json.decodeFromString<TemplateListResponse>(FIXTURE_TEMPLATES_LIST)
             assertEquals(1, result.allTemplates.size)
-            assertEquals("Test Template", result.allTemplates[0].name)
+            assertEquals("Test Template", result.allTemplates[0].templateName)
         }
 
         @Test
