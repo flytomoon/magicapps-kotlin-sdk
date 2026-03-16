@@ -225,12 +225,12 @@ data class Template(
     @SerialName("template_type")
     val templateType: String? = null,
     /** > */
-    @SerialName("source_mode")
-    val sourceMode: String? = null,
-    /** Auto-derived behavioral classification. Read-only — computed from template_type, http_get_mode, and template identity. */
+    @SerialName("http_get_mode")
+    val httpGetMode: String? = null,
+    /** > */
     @SerialName("behavior_role")
     val behaviorRole: String? = null,
-    /** Configuration for api_poll source_mode. Only applies when source_mode=api_poll. */
+    /** Configuration for input_source_poll http_get_mode. Only applies when http_get_mode=input_source_poll. */
     @SerialName("poll_config")
     val pollConfig: Map<String, @Contextual Any>? = null,
     /** > */
@@ -248,7 +248,7 @@ data class Template(
     /** > */
     @SerialName("empty_result_behavior")
     val emptyResultBehavior: String? = null,
-    /** API-poll-specific response parsing configuration. Only applies when source_mode=api_poll. */
+    /** API poll response parsing configuration. Only applies when http_get_mode=input_source_poll. */
     @SerialName("api_poll_config")
     val apiPollConfig: Map<String, @Contextual Any>? = null,
     /** > */
