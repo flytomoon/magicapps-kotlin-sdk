@@ -60,7 +60,7 @@ data class AIProvider(
 )
 
 @Serializable
-data class Error(
+data class ErrorResponse(
     val error: String,
     val message: String
 )
