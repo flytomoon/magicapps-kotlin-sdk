@@ -225,6 +225,9 @@ data class Template(
     @SerialName("template_type")
     val templateType: String? = null,
     /** > */
+    @SerialName("slug_mode")
+    val slugMode: String? = null,
+    /** > */
     @SerialName("http_get_mode")
     val httpGetMode: String? = null,
     /** > */
@@ -354,6 +357,8 @@ data class AppIntegration(
     val templateName: String? = null,
     @SerialName("template_type")
     val templateType: String? = null,
+    @SerialName("slug_mode")
+    val slugMode: String? = null,
     @SerialName("endpoint_input_mode")
     val endpointInputMode: String? = null,
     @SerialName("endpoint_input_placeholder")
@@ -394,6 +399,8 @@ data class AppIntegrationV2(
     val templateName: String? = null,
     @SerialName("template_type")
     val templateType: String? = null,
+    @SerialName("slug_mode")
+    val slugMode: String? = null,
     @SerialName("endpoint_input_mode")
     val endpointInputMode: String? = null,
     @SerialName("endpoint_input_placeholder")
