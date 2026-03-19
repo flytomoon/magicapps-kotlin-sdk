@@ -233,6 +233,9 @@ data class Template(
     /** > */
     @SerialName("behavior_role")
     val behaviorRole: String? = null,
+    /** > */
+    @SerialName("inbound_value_field")
+    val inboundValueField: String? = null,
     /** Configuration for input_source_poll http_get_mode. Only applies when http_get_mode=input_source_poll. */
     @SerialName("poll_config")
     val pollConfig: Map<String, @Contextual Any>? = null,
@@ -359,6 +362,28 @@ data class AppIntegration(
     val templateType: String? = null,
     @SerialName("slug_mode")
     val slugMode: String? = null,
+    @SerialName("behavior_role")
+    val behaviorRole: String? = null,
+    /** > */
+    @SerialName("inbound_value_field")
+    val inboundValueField: String? = null,
+    @SerialName("http_get_mode")
+    val httpGetMode: String? = null,
+    @SerialName("poll_mode")
+    val pollMode: String? = null,
+    @SerialName("timeout_ms")
+    val timeoutMs: Int? = null,
+    @SerialName("max_attempts")
+    val maxAttempts: Int? = null,
+    @SerialName("backoff_ms")
+    val backoffMs: Int? = null,
+    @SerialName("empty_result_behavior")
+    val emptyResultBehavior: String? = null,
+    @SerialName("response_type")
+    val responseType: String? = null,
+    /** Dot-path to extract value from JSON responses (for example, data.transcription.text). */
+    @SerialName("response_path")
+    val responsePath: String? = null,
     @SerialName("endpoint_input_mode")
     val endpointInputMode: String? = null,
     @SerialName("endpoint_input_placeholder")
@@ -401,6 +426,28 @@ data class AppIntegrationV2(
     val templateType: String? = null,
     @SerialName("slug_mode")
     val slugMode: String? = null,
+    @SerialName("behavior_role")
+    val behaviorRole: String? = null,
+    /** > */
+    @SerialName("inbound_value_field")
+    val inboundValueField: String? = null,
+    @SerialName("http_get_mode")
+    val httpGetMode: String? = null,
+    @SerialName("poll_mode")
+    val pollMode: String? = null,
+    @SerialName("timeout_ms")
+    val timeoutMs: Int? = null,
+    @SerialName("max_attempts")
+    val maxAttempts: Int? = null,
+    @SerialName("backoff_ms")
+    val backoffMs: Int? = null,
+    @SerialName("empty_result_behavior")
+    val emptyResultBehavior: String? = null,
+    @SerialName("response_type")
+    val responseType: String? = null,
+    /** Dot-path to extract value from JSON responses (for example, data.transcription.text). */
+    @SerialName("response_path")
+    val responsePath: String? = null,
     @SerialName("endpoint_input_mode")
     val endpointInputMode: String? = null,
     @SerialName("endpoint_input_placeholder")
