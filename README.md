@@ -8,7 +8,7 @@ Official Kotlin/Android SDK for the Magic Apps Cloud platform.
 
 ```kotlin
 dependencies {
-    implementation("cloud.magicapps:magicapps-cloud-sdk:0.1.0")
+    implementation("cloud.magicapps:magicapps-cloud-sdk:0.2.0")
 }
 ```
 
@@ -16,7 +16,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'cloud.magicapps:magicapps-cloud-sdk:0.1.0'
+    implementation 'cloud.magicapps:magicapps-cloud-sdk:0.2.0'
 }
 ```
 
