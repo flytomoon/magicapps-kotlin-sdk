@@ -8,7 +8,10 @@ import com.magicapps.sdk.services.TemplatesService
 import com.magicapps.sdk.services.DevicesService
 import com.magicapps.sdk.services.EndpointsService
 import com.magicapps.sdk.services.LookupTablesService
+import com.magicapps.sdk.services.OwnerService
+import com.magicapps.sdk.services.SettingsService
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 
 /**
  * Health check response from GET /ping.
@@ -17,6 +20,22 @@ import kotlinx.serialization.Serializable
 data class PingResponse(
     val message: String,
     val requestId: String? = null
+)
+
+/**
+ * App info response from GET /apps/{appId}.
+ */
+@Serializable
+data class AppInfo(
+    @SerialName("app_id") val appId: String,
+    val name: String? = null,
+    @SerialName("display_name") val displayName: String? = null,
+    val description: String? = null,
+    val status: String? = null,
+    @SerialName("icon_url") val iconUrl: String? = null,
+    val category: String? = null,
+    val tags: List<String>? = null,
+    val visibility: TemplateVisibility? = null
 )
 
 /**
@@ -52,6 +71,10 @@ class MagicAppsClient(config: SdkConfig) {
     val endpoints = EndpointsService(http)
     /** Lookup tables service (all platforms). */
     val lookupTables = LookupTablesService(http)
+    /** Owner registration and migration service (all platforms). */
+    val owner = OwnerService(http)
+    /** Settings and configuration service (all platforms). */
+    val settings = SettingsService(http)
 
     init {
         registry.register(auth)
@@ -61,11 +84,17 @@ class MagicAppsClient(config: SdkConfig) {
         registry.register(devices)
         registry.register(endpoints)
         registry.register(lookupTables)
+        registry.register(owner)
+        registry.register(settings)
     }
 
     /** Health check - verifies connectivity to the MagicApps API. */
     suspend fun ping(): PingResponse =
         http.get("/ping", authMode = AuthMode.NONE)
+
+    /** Fetch app info for the current app_id. */
+    suspend fun getAppInfo(): AppInfo =
+        http.get("/apps/${http.appId}", authMode = AuthMode.NONE)
 
     /** Register a custom service module. */
     fun registerService(module: ServiceModule) {

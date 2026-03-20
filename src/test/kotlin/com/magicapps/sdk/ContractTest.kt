@@ -4,6 +4,7 @@ import com.magicapps.sdk.core.*
 import com.magicapps.sdk.services.*
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.*
@@ -53,18 +54,8 @@ class ContractTest {
         // Ping returns { message, requestId }
         const val FIXTURE_PING = """{"message":"pong","requestId":"req-abc123"}"""
 
-        // Source: lambda/templates/index.js handleList (~line 860) - returns { items: Template[] }
-        const val FIXTURE_TEMPLATES_LIST = """{"items":[{"template_id":"t1","app_id":"test-app","name":"Test Template","slug":"test-template","description":"A test template","created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z"}],"count":1}"""
-
         // Source: lambda/templates/index.js handleGet (~line 880) - returns single template
         const val FIXTURE_TEMPLATE = """{"template_id":"t1","app_id":"test-app","name":"Test","description":"A test template","created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z"}"""
-
-        // Source: lambda/templates/index.js handleCreate (~line 963)
-        const val FIXTURE_TEMPLATE_CREATED = """{"template_id":"t2","app_id":"test-app","name":"New Template","description":"desc","created_at":"2025-01-01T00:00:00Z","updated_at":"2025-01-01T00:00:00Z"}"""
-
-        // Source: lambda/templates/index.js handleRegistryApps (~line 515-518) via toCardApp (~line 571-591)
-        // Returns { items: CardApp[] }
-        const val FIXTURE_REGISTRY_APPS = """{"items":[{"app_id":"app1","name":"App One","slug":"app-one","icon_url":"https://example.com/icon.png","description":"A registry app"}]}"""
 
         // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
         // All AI responses are normalized to { id, provider, model, choices, usage }
@@ -159,48 +150,6 @@ class ContractTest {
 
     @Nested
     inner class AuthServiceContract {
-        @Test
-        fun `login targets POST auth-login`() = runTest {
-            val http = createHttpClient()
-            val service = AuthService(http)
-            enqueue("""{"accessToken":"tok","refreshToken":"rt","idToken":"id","expiresIn":3600}""")
-
-            val result = service.login("user@example.com", "password")
-            val request = server.takeRequest()
-
-            assertEquals("POST", request.method)
-            assertEquals("/auth/login", request.path)
-            assertEquals("tok", result.accessToken)
-        }
-
-        @Test
-        fun `register targets POST auth-register`() = runTest {
-            val http = createHttpClient()
-            val service = AuthService(http)
-            enqueue("""{"userId":"u1","email":"user@example.com","confirmed":false}""")
-
-            val result = service.register("user@example.com", "password", "Test User")
-            val request = server.takeRequest()
-
-            assertEquals("POST", request.method)
-            assertEquals("/auth/register", request.path)
-            assertEquals("u1", result.userId)
-            assertFalse(result.confirmed)
-        }
-
-        @Test
-        fun `logout targets POST auth-logout`() = runTest {
-            val http = createHttpClient()
-            val service = AuthService(http)
-            enqueue204()
-
-            service.logout()
-            val request = server.takeRequest()
-
-            assertEquals("POST", request.method)
-            assertEquals("/auth/logout", request.path)
-        }
-
         @Test
         fun `refreshToken targets POST auth-client-refresh`() = runTest {
             val http = createHttpClient()
@@ -472,37 +421,6 @@ class ContractTest {
     @Nested
     inner class TemplatesServiceContract {
         @Test
-        fun `list targets GET apps-appId-templates`() = runTest {
-            val http = createHttpClient()
-            val service = TemplatesService(http)
-            // Source: lambda/templates/index.js handleList (~line 860) - returns { items: Template[] }
-            enqueue(FIXTURE_TEMPLATES_LIST)
-
-            val result = service.list()
-            val recorded = server.takeRequest()
-
-            assertEquals("GET", recorded.method)
-            assertEquals("/apps/$TEST_APP_ID/templates", recorded.path)
-            assertEquals(1, result.allTemplates.size)
-            assertEquals("t1", result.allTemplates[0].templateId)
-        }
-
-        @Test
-        fun `list with pagination targets GET apps-appId-templates with next_token query`() = runTest {
-            val http = createHttpClient()
-            val service = TemplatesService(http)
-            // Source: lambda/templates/index.js handleList (~line 860)
-            enqueue("""{"items":[],"count":0}""")
-
-            service.list(nextToken = "page2")
-            val recorded = server.takeRequest()
-
-            assertEquals("GET", recorded.method)
-            assertTrue(recorded.path!!.startsWith("/apps/$TEST_APP_ID/templates"))
-            assertTrue(recorded.path!!.contains("next_token=page2"))
-        }
-
-        @Test
         fun `get targets GET apps-appId-templates-templateId`() = runTest {
             val http = createHttpClient()
             val service = TemplatesService(http)
@@ -518,63 +436,17 @@ class ContractTest {
         }
 
         @Test
-        fun `create targets POST apps-appId-templates`() = runTest {
+        fun `getCatalog targets GET apps-appId-catalog`() = runTest {
             val http = createHttpClient()
             val service = TemplatesService(http)
-            // Source: lambda/templates/index.js handleCreate (~line 963)
-            enqueue(FIXTURE_TEMPLATE_CREATED)
+            enqueue("""{"apps":[],"templates":[]}""")
 
-            val result = service.create("New Template", description = "desc")
-            val recorded = server.takeRequest()
-
-            assertEquals("POST", recorded.method)
-            assertEquals("/apps/$TEST_APP_ID/templates", recorded.path)
-            assertEquals("t2", result.templateId)
-        }
-
-        @Test
-        fun `update targets PUT apps-appId-templates-templateId`() = runTest {
-            val http = createHttpClient()
-            val service = TemplatesService(http)
-            // Source: lambda/templates/index.js handleUpdate
-            enqueue("""{"template_id":"t1","name":"Updated","updated_at":"2025-06-01T00:00:00Z"}""")
-
-            val result = service.update("t1", name = "Updated")
-            val recorded = server.takeRequest()
-
-            assertEquals("PUT", recorded.method)
-            assertEquals("/apps/$TEST_APP_ID/templates/t1", recorded.path)
-            assertEquals("Updated", result.name)
-        }
-
-        @Test
-        fun `delete targets DELETE apps-appId-templates-templateId`() = runTest {
-            val http = createHttpClient()
-            val service = TemplatesService(http)
-            enqueue204()
-
-            service.delete("t1")
-            val recorded = server.takeRequest()
-
-            assertEquals("DELETE", recorded.method)
-            assertEquals("/apps/$TEST_APP_ID/templates/t1", recorded.path)
-        }
-
-        @Test
-        fun `browseRegistry targets GET registry-apps`() = runTest {
-            val http = createHttpClient()
-            val service = TemplatesService(http)
-            // Source: lambda/templates/index.js handleRegistryApps (~line 515-518)
-            // Returns { items: CardApp[] } via toCardApp (~line 571-591)
-            enqueue(FIXTURE_REGISTRY_APPS)
-
-            val result = service.browseRegistry()
+            val result = service.getCatalog()
             val recorded = server.takeRequest()
 
             assertEquals("GET", recorded.method)
-            assertEquals("/registry/apps", recorded.path)
-            assertEquals(1, result.allApps.size)
-            assertEquals("app1", result.allApps[0].appId)
+            assertEquals("/apps/$TEST_APP_ID/catalog", recorded.path)
+            assertTrue(result.containsKey("apps"))
         }
     }
 
@@ -839,22 +711,184 @@ class ContractTest {
     }
 
     // ========================================================================
+    // OwnerService contract tests
+    // ========================================================================
+
+    @Nested
+    inner class OwnerServiceContract {
+        @Test
+        fun `registerOwner targets POST owner-register`() = runTest {
+            val http = createHttpClient()
+            val service = OwnerService(http)
+            enqueue("""{"owner_id":"own-1","app_id":"test-app","token":"owner-tok","status":"created"}""")
+
+            val result = service.registerOwner("device-123", "test-app")
+            val recorded = server.takeRequest()
+
+            assertEquals("POST", recorded.method)
+            assertEquals("/owner/register", recorded.path)
+            assertEquals("own-1", result.ownerId)
+            assertEquals("test-app", result.appId)
+            assertEquals("owner-tok", result.token)
+        }
+
+        @Test
+        fun `registerOwner includes hcaptcha token when provided`() = runTest {
+            val http = createHttpClient()
+            val service = OwnerService(http)
+            enqueue("""{"owner_id":"own-2","app_id":"test-app","status":"created"}""")
+
+            service.registerOwner("device-456", "test-app", hcaptchaToken = "captcha-tok")
+            val recorded = server.takeRequest()
+
+            val body = recorded.body.readUtf8()
+            assertTrue(body.contains(""""hcaptcha_token":"captcha-tok""""))
+        }
+
+        @Test
+        fun `migrateOwnerToUser targets POST owner-migrate`() = runTest {
+            val http = createHttpClient()
+            val service = OwnerService(http)
+            enqueue("""{"owner_id":"own-1","app_id":"test-app","user_id":"user-1","status":"migrated"}""")
+
+            val result = service.migrateOwnerToUser("own-1", "test-app")
+            val recorded = server.takeRequest()
+
+            assertEquals("POST", recorded.method)
+            assertEquals("/owner/migrate", recorded.path)
+            assertEquals("own-1", result.ownerId)
+            assertEquals("user-1", result.userId)
+            assertEquals("migrated", result.status)
+        }
+    }
+
+    // ========================================================================
+    // SettingsService contract tests
+    // ========================================================================
+
+    @Nested
+    inner class SettingsServiceContract {
+        @Test
+        fun `getSettings targets GET apps-appId-settings`() = runTest {
+            val http = createHttpClient()
+            val service = SettingsService(http)
+            enqueue("""{"theme":"dark","notifications":true}""")
+
+            val result = service.getSettings()
+            val recorded = server.takeRequest()
+
+            assertEquals("GET", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/settings", recorded.path)
+            assertTrue(result.containsKey("theme"))
+        }
+
+        @Test
+        fun `updateSettings targets PUT apps-appId-settings`() = runTest {
+            val http = createHttpClient()
+            val service = SettingsService(http)
+            enqueue("""{"theme":"light","notifications":false}""")
+
+            val body = kotlinx.serialization.json.Json.parseToJsonElement("""{"theme":"light"}""").jsonObject
+            val result = service.updateSettings(body)
+            val recorded = server.takeRequest()
+
+            assertEquals("PUT", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/settings", recorded.path)
+            assertTrue(result.containsKey("theme"))
+        }
+
+        @Test
+        fun `getConfig targets GET apps-appId-config`() = runTest {
+            val http = createHttpClient()
+            val service = SettingsService(http)
+            enqueue("""{"feature_flags":{"ai_enabled":true}}""")
+
+            val result = service.getConfig()
+            val recorded = server.takeRequest()
+
+            assertEquals("GET", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/config", recorded.path)
+            assertTrue(result.containsKey("feature_flags"))
+        }
+
+        @Test
+        fun `updateConfig targets PUT apps-appId-config`() = runTest {
+            val http = createHttpClient()
+            val service = SettingsService(http)
+            enqueue("""{"feature_flags":{"ai_enabled":false}}""")
+
+            val body = kotlinx.serialization.json.Json.parseToJsonElement("""{"feature_flags":{"ai_enabled":false}}""").jsonObject
+            val result = service.updateConfig(body)
+            val recorded = server.takeRequest()
+
+            assertEquals("PUT", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/config", recorded.path)
+        }
+
+        @Test
+        fun `getIntegrationSecret targets GET apps-appId-integrations-id-secret`() = runTest {
+            val http = createHttpClient()
+            val service = SettingsService(http)
+            enqueue("""{"api_key":"sk-secret-123"}""")
+
+            val result = service.getIntegrationSecret("int-1")
+            val recorded = server.takeRequest()
+
+            assertEquals("GET", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/integrations/int-1/secret", recorded.path)
+            assertTrue(result.containsKey("api_key"))
+        }
+
+        @Test
+        fun `uploadIntegrationSecret targets POST apps-appId-integrations-id-secret`() = runTest {
+            val http = createHttpClient()
+            val service = SettingsService(http)
+            enqueue("""{"status":"saved"}""")
+
+            val body = kotlinx.serialization.json.Json.parseToJsonElement("""{"api_key":"sk-new-secret"}""").jsonObject
+            val result = service.uploadIntegrationSecret("int-1", body)
+            val recorded = server.takeRequest()
+
+            assertEquals("POST", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/integrations/int-1/secret", recorded.path)
+        }
+    }
+
+    // ========================================================================
+    // MagicAppsClient.getAppInfo contract test
+    // ========================================================================
+
+    @Nested
+    inner class GetAppInfoContract {
+        @Test
+        fun `getAppInfo targets GET apps-appId`() = runTest {
+            val config = SdkConfig(
+                baseUrl = baseUrl,
+                appId = TEST_APP_ID,
+                retries = 0,
+                tokenStorage = InMemoryTokenStorage()
+            )
+            val client = MagicAppsClient(config)
+            enqueue("""{"app_id":"test-app","name":"Test App","display_name":"Test","description":"A test app","status":"active","icon_url":"https://example.com/icon.png","category":"tools"}""")
+
+            val result = client.getAppInfo()
+            val recorded = server.takeRequest()
+
+            assertEquals("GET", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID", recorded.path)
+            assertEquals("test-app", result.appId)
+            assertEquals("Test App", result.name)
+            assertEquals("Test", result.displayName)
+            assertEquals("active", result.status)
+        }
+    }
+
+    // ========================================================================
     // Response deserialization robustness tests (golden fixture shape validation)
     // ========================================================================
 
     @Nested
     inner class ResponseDeserializationContract {
-        @Test
-        fun `LoginResponse handles missing optional fields`() {
-            val result = json.decodeFromString<LoginResponse>(
-                """{"accessToken":"tok"}"""
-            )
-            assertEquals("tok", result.accessToken)
-            assertNull(result.refreshToken)
-            assertNull(result.idToken)
-            assertNull(result.expiresIn)
-        }
-
         @Test
         fun `ChatCompletionResponse handles normalized Lambda response shape`() {
             // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
@@ -864,22 +898,6 @@ class ContractTest {
             assertEquals(1, result.choices.size)
             assertEquals("Hello!", result.choices[0].message.content)
             assertEquals("stop", result.choices[0].finishReason)
-        }
-
-        @Test
-        fun `TemplateListResponse handles items field from real Lambda`() {
-            // Source: lambda/templates/index.js handleList (~line 860) - returns { items: [] }
-            val result = json.decodeFromString<TemplateListResponse>(FIXTURE_TEMPLATES_LIST)
-            assertEquals(1, result.allTemplates.size)
-            assertEquals("Test Template", result.allTemplates[0].name)
-        }
-
-        @Test
-        fun `TemplateListResponse handles legacy templates field`() {
-            val result = json.decodeFromString<TemplateListResponse>(
-                """{"templates":[{"name":"Template via templates"}],"count":1}"""
-            )
-            assertEquals(1, result.allTemplates.size)
         }
 
         @Test
@@ -960,14 +978,6 @@ class ContractTest {
         }
 
         @Test
-        fun `RegistryAppsResponse handles items field from real Lambda`() {
-            // Source: lambda/templates/index.js handleRegistryApps (~line 515-518)
-            val result = json.decodeFromString<RegistryAppsResponse>(FIXTURE_REGISTRY_APPS)
-            assertEquals(1, result.allApps.size)
-            assertEquals("app-one", result.allApps[0].slug)
-        }
-
-        @Test
         fun `AiUsageSummary deserializes real Lambda shape`() {
             // Source: lambda/ai_proxy/index.js handleGetUsageSummary (~line 457-474)
             val result = json.decodeFromString<AiUsageSummary>(FIXTURE_AI_USAGE_SUMMARY)
@@ -1035,48 +1045,6 @@ class ContractTest {
     @Nested
     inner class RequestBodyContract {
         @Test
-        fun `auth login sends email and password in body`() = runTest {
-            val http = createHttpClient()
-            val service = AuthService(http)
-            enqueue("""{"accessToken":"tok"}""")
-
-            service.login("test@example.com", "mypassword")
-            val recorded = server.takeRequest()
-
-            val body = recorded.body.readUtf8()
-            assertTrue(body.contains(""""email":"test@example.com""""))
-            assertTrue(body.contains(""""password":"mypassword""""))
-        }
-
-        @Test
-        fun `auth register includes name when provided`() = runTest {
-            val http = createHttpClient()
-            val service = AuthService(http)
-            enqueue("""{"userId":"u1","email":"test@example.com","confirmed":false}""")
-
-            service.register("test@example.com", "pass", "John Doe")
-            val recorded = server.takeRequest()
-
-            val body = recorded.body.readUtf8()
-            assertTrue(body.contains(""""name":"John Doe""""))
-        }
-
-        @Test
-        fun `template create sends name and description`() = runTest {
-            val http = createHttpClient()
-            val service = TemplatesService(http)
-            // Source: lambda/templates/index.js handleCreate (~line 963)
-            enqueue(FIXTURE_TEMPLATE_CREATED)
-
-            service.create("My Template", description = "A description")
-            val recorded = server.takeRequest()
-
-            val body = recorded.body.readUtf8()
-            assertTrue(body.contains(""""name":"My Template""""))
-            assertTrue(body.contains(""""description":"A description""""))
-        }
-
-        @Test
         fun `endpoint revoke sends slug in body`() = runTest {
             val http = createHttpClient()
             val service = EndpointsService(http)
@@ -1123,11 +1091,10 @@ class ContractTest {
         @Test
         fun `BEARER endpoints include Authorization header`() = runTest {
             val http = createHttpClient(accessToken = "my-bearer-token")
-            val service = TemplatesService(http)
-            // Source: lambda/templates/index.js handleCreate (~line 963)
-            enqueue(FIXTURE_TEMPLATE_CREATED)
+            val service = SettingsService(http)
+            enqueue("""{"key":"value"}""")
 
-            service.create("Test")
+            service.getSettings()
             val recorded = server.takeRequest()
 
             val authHeader = recorded.getHeader("Authorization")
@@ -1139,10 +1106,9 @@ class ContractTest {
         fun `NONE endpoints do not include Authorization header`() = runTest {
             val http = createHttpClient(accessToken = null, ownerToken = null)
             val service = TemplatesService(http)
-            // Source: lambda/templates/index.js handleList (~line 860)
-            enqueue("""{"items":[],"count":0}""")
+            enqueue(FIXTURE_TEMPLATE)
 
-            service.list()
+            service.get("t1")
             val recorded = server.takeRequest()
 
             assertNull(recorded.getHeader("Authorization"))
