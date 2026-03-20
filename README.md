@@ -52,28 +52,12 @@ val client = MagicAppsClient(SdkConfig(
 val pong = client.ping()
 println(pong.message)
 
-// List templates
-val response = client.templates.list()
-for (template in response.allTemplates) {
-    println(template.name)
-}
+// Get a template
+val template = client.templates.get("template-id")
+println(template.templateName)
 ```
 
 ## Authentication
-
-### Email/Password
-
-```kotlin
-// Login
-val loginResult = client.auth.login("user@example.com", "password123")
-// Tokens are stored automatically by the SDK
-
-// Register
-val registerResult = client.auth.register("user@example.com", "password123", name = "Jane Doe")
-
-// Logout (clears stored tokens)
-client.auth.logout()
-```
 
 ### Token-Based
 
@@ -130,26 +114,43 @@ val result = client.auth.verifyEmailMagicLink(token)
 ### Templates
 
 ```kotlin
-// List templates
-val templates = client.templates.list()
-
 // Get a specific template
 val template = client.templates.get("template-id")
 
-// Create a template (requires auth)
-val newTemplate = client.templates.create(
-    name = "My Template",
-    description = "A description"
+// Get app catalog
+val catalog = client.templates.getCatalog()
+```
+
+### Owner
+
+```kotlin
+// Register a device owner (returns owner token)
+val result = client.owner.registerOwner(
+    deviceOwnerId = "device-uuid",
+    appId = "your-app-id"
 )
 
-// Update a template (requires auth)
-val updated = client.templates.update("template-id", name = "New Name")
+// Migrate owner data to a signed-in user
+client.owner.migrateOwnerToUser(
+    deviceOwnerId = "device-uuid",
+    appId = "your-app-id"
+)
+```
 
-// Delete a template (requires auth)
-client.templates.delete("template-id")
+### Settings & Config
 
-// Browse registry catalog
-val registryApps = client.templates.browseRegistry()
+```kotlin
+// Get/update user settings
+val settings = client.settings.getSettings()
+client.settings.updateSettings(JsonObject(mapOf("key" to JsonPrimitive("value"))))
+
+// Get/update config
+val config = client.settings.getConfig()
+client.settings.updateConfig(configBody)
+
+// Integration secrets
+val secret = client.settings.getIntegrationSecret("integration-id")
+client.settings.uploadIntegrationSecret("integration-id", secretBody)
 ```
 
 ### Devices
@@ -260,7 +261,7 @@ The SDK uses a typed exception hierarchy for clear error handling:
 import com.magicapps.sdk.core.*
 
 try {
-    val templates = client.templates.list()
+    val template = client.templates.get("template-id")
 } catch (e: UnauthorizedException) {
     // 401 - Token expired or invalid
     println("Auth error: ${e.message}")
