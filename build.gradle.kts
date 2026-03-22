@@ -53,7 +53,7 @@ publishing {
             pom {
                 name.set("Magic Apps Cloud SDK")
                 description.set("Official Magic Apps Cloud SDK for Kotlin/Android - provides authentication, registry, payments, and platform service access")
-                url.set("https://github.com/magicapps/magicapps-infra")
+                url.set("https://github.com/flytomoon/magicapps-infra")
 
                 licenses {
                     license {
@@ -71,9 +71,9 @@ publishing {
                 }
 
                 scm {
-                    connection.set("scm:git:git://github.com/magicapps/magicapps-infra.git")
-                    developerConnection.set("scm:git:ssh://github.com:magicapps/magicapps-infra.git")
-                    url.set("https://github.com/magicapps/magicapps-infra/tree/main/sdks/kotlin")
+                    connection.set("scm:git:git://github.com/flytomoon/magicapps-infra.git")
+                    developerConnection.set("scm:git:ssh://github.com:flytomoon/magicapps-infra.git")
+                    url.set("https://github.com/flytomoon/magicapps-infra/tree/main/sdks/kotlin")
                 }
             }
         }
@@ -82,7 +82,7 @@ publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/magicapps/magicapps-infra")
+            url = uri("https://maven.pkg.github.com/flytomoon/magicapps-infra")
             credentials {
                 username = System.getenv("GITHUB_ACTOR") ?: project.findProperty("gpr.user") as String? ?: ""
                 password = System.getenv("GITHUB_TOKEN") ?: project.findProperty("gpr.key") as String? ?: ""
