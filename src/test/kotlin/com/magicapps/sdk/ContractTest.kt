@@ -70,14 +70,6 @@ class ContractTest {
         // Source: lambda/ai_proxy/index.js normalizeProviderResponse (~line 830-874)
         const val FIXTURE_MODERATION = """{"id":"ai_resp_mod123","provider":"openai","model":"text-moderation-latest","choices":[],"usage":{"input_tokens":5,"output_tokens":0,"total_tokens":5,"estimated_cost_usd":0.0},"results":[{"flagged":false,"categories":{"hate":false,"sexual":false,"violence":false},"category_scores":{"hate":0.001,"sexual":0.0002,"violence":0.0001}}]}"""
 
-        // Source: lambda/ai_proxy/index.js handleGetUsageSummary (~line 457-474)
-        // Returns { summaries: AiUsageSummaryRecord[] }
-        const val FIXTURE_AI_USAGE_SUMMARY = """{"summaries":[{"app_id":"test-app","period":"MONTHLY#2026-03","total_requests":150,"total_input_tokens":50000,"total_output_tokens":25000,"total_estimated_cost_usd":1.25,"updated_at":1741900000}]}"""
-
-        // Source: lambda/ai_proxy/index.js handleGetUsage (~line 436-454)
-        // Returns { usage: AiUsageRecord[], count: N }
-        const val FIXTURE_AI_USAGE = """{"usage":[{"usage_id":"usage-001","app_id":"test-app","provider_id":"openai","model_id":"gpt-4","request_type":"chat","input_tokens":10,"output_tokens":5,"total_tokens":15,"latency_ms":250,"status":"success","created_at":1741900000.0,"expires_at":1749676000.0}],"count":1}"""
-
         // Source: lambda/devices/index.js (~line 22-26)
         // Returns { items: Device[] }
         const val FIXTURE_DEVICES = """{"items":[{"id":"d1","device_name":"TestDevice","display_name":"Test Device","device_type":"bluetooth","tags":["ios"],"os":"iOS","manufacturer":"Apple"}],"count":1}"""
@@ -377,41 +369,6 @@ class ContractTest {
             assertFalse(result.results[0].flagged)
         }
 
-        @Test
-        fun `getUsageSummary targets GET apps-appId-ai-usage-summary`() = runTest {
-            val http = createHttpClient()
-            val service = AiService(http)
-            // Source: lambda/ai_proxy/index.js handleGetUsageSummary (~line 457-474)
-            // Returns { summaries: AiUsageSummaryRecord[] }
-            enqueue(FIXTURE_AI_USAGE_SUMMARY)
-
-            val result = service.getUsageSummary()
-            val recorded = server.takeRequest()
-
-            assertEquals("GET", recorded.method)
-            assertEquals("/apps/$TEST_APP_ID/ai/usage/summary", recorded.path)
-            assertEquals(1, result.summaries?.size)
-            assertEquals(150, result.summaries?.get(0)?.totalRequests)
-            assertEquals(150, result.totalRequests)
-        }
-
-        @Test
-        fun `getUsage targets GET apps-appId-ai-usage`() = runTest {
-            val http = createHttpClient()
-            val service = AiService(http)
-            // Source: lambda/ai_proxy/index.js handleGetUsage (~line 436-454)
-            // Returns { usage: AiUsageRecord[], count: N }
-            enqueue(FIXTURE_AI_USAGE)
-
-            val result = service.getUsage()
-            val recorded = server.takeRequest()
-
-            assertEquals("GET", recorded.method)
-            assertEquals("/apps/$TEST_APP_ID/ai/usage", recorded.path)
-            assertEquals(1, result.usage.size)
-            assertEquals("usage-001", result.usage[0].usageId)
-            assertEquals(1, result.count)
-        }
     }
 
     // ========================================================================
@@ -977,24 +934,6 @@ class ContractTest {
             assertEquals("new-hmac-secret", result.hmacSecret)
         }
 
-        @Test
-        fun `AiUsageSummary deserializes real Lambda shape`() {
-            // Source: lambda/ai_proxy/index.js handleGetUsageSummary (~line 457-474)
-            val result = json.decodeFromString<AiUsageSummary>(FIXTURE_AI_USAGE_SUMMARY)
-            assertEquals(1, result.summaries?.size)
-            assertEquals("MONTHLY#2026-03", result.summaries?.get(0)?.period)
-            assertEquals(150, result.totalRequests)
-        }
-
-        @Test
-        fun `AiUsageResponse deserializes real Lambda shape`() {
-            // Source: lambda/ai_proxy/index.js handleGetUsage (~line 436-454)
-            val result = json.decodeFromString<AiUsageResponse>(FIXTURE_AI_USAGE)
-            assertEquals(1, result.usage.size)
-            assertEquals("usage-001", result.usage[0].usageId)
-            assertEquals("openai", result.usage[0].providerId)
-            assertEquals(1, result.count)
-        }
     }
 
     // ========================================================================

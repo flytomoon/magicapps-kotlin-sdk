@@ -232,9 +232,6 @@ if (moderation.results.first().flagged) {
     println("Content flagged!")
 }
 
-// Usage tracking
-val usage = client.ai.getUsage(limit = 10)
-val summary = client.ai.getUsageSummary()
 ```
 
 ### Lookup Tables
