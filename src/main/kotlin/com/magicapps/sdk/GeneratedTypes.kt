@@ -60,9 +60,132 @@ data class AIProvider(
 )
 
 @Serializable
+data class AIConversation(
+    @SerialName("conversation_id")
+    val conversationId: String? = null,
+    val title: String? = null,
+    @SerialName("message_count")
+    val messageCount: Int? = null,
+    @SerialName("created_at")
+    val createdAt: Int? = null,
+    @SerialName("updated_at")
+    val updatedAt: Int? = null
+)
+
+@Serializable
+data class AIConversationDetail(
+    @SerialName("conversation_id")
+    val conversationId: String? = null,
+    val title: String? = null,
+    @SerialName("message_count")
+    val messageCount: Int? = null,
+    @SerialName("created_at")
+    val createdAt: Int? = null,
+    @SerialName("updated_at")
+    val updatedAt: Int? = null,
+    @SerialName("system_prompt")
+    val systemPrompt: String? = null,
+    val metadata: Map<String, @Contextual Any>? = null,
+    val messages: List<Int>? = null
+)
+
+@Serializable
+data class AITool(
+    @SerialName("tool_id")
+    val toolId: String? = null,
+    @SerialName("app_id")
+    val appId: String? = null,
+    val name: String? = null,
+    val description: String? = null,
+    @SerialName("input_schema")
+    val inputSchema: Map<String, @Contextual Any>? = null,
+    @SerialName("endpoint_url")
+    val endpointUrl: String? = null,
+    val status: String? = null,
+    @SerialName("created_at")
+    val createdAt: Int? = null
+)
+
+@Serializable
 data class ErrorResponse(
     val error: String,
     val message: String
+)
+
+/** Full user profile (returned to the profile owner) */
+@Serializable
+data class UserProfile(
+    @SerialName("user_id")
+    val userId: String? = null,
+    @SerialName("app_id")
+    val appId: String? = null,
+    @SerialName("display_name")
+    val displayName: String? = null,
+    @SerialName("avatar_url")
+    val avatarUrl: String? = null,
+    val bio: String? = null,
+    val preferences: Map<String, @Contextual Any>? = null,
+    @SerialName("custom_fields")
+    val customFields: Map<String, @Contextual Any>? = null,
+    /** Unix timestamp in milliseconds */
+    @SerialName("created_at")
+    val createdAt: Double? = null,
+    /** Unix timestamp in milliseconds */
+    @SerialName("updated_at")
+    val updatedAt: Double? = null
+)
+
+/** Public user profile (visible to other users) */
+@Serializable
+data class UserProfilePublic(
+    @SerialName("user_id")
+    val userId: String? = null,
+    @SerialName("display_name")
+    val displayName: String? = null,
+    @SerialName("avatar_url")
+    val avatarUrl: String? = null,
+    val bio: String? = null
+)
+
+@Serializable
+data class Webhook(
+    @SerialName("webhook_id")
+    val webhookId: String? = null,
+    @SerialName("tenant_id")
+    val tenantId: String? = null,
+    @SerialName("app_id")
+    val appId: String? = null,
+    val url: String? = null,
+    val events: List<String>? = null,
+    /** Masked in list/detail responses; shown in full only on creation */
+    val secret: String? = null,
+    val description: String? = null,
+    val status: String? = null,
+    @SerialName("created_at")
+    val createdAt: Double? = null,
+    @SerialName("updated_at")
+    val updatedAt: Double? = null
+)
+
+@Serializable
+data class WebhookDelivery(
+    @SerialName("delivery_id")
+    val deliveryId: String? = null,
+    @SerialName("webhook_id")
+    val webhookId: String? = null,
+    @SerialName("event_type")
+    val eventType: String? = null,
+    val payload: String? = null,
+    val success: Boolean? = null,
+    @SerialName("status_code")
+    val statusCode: Int? = null,
+    @SerialName("response_body")
+    val responseBody: String? = null,
+    @SerialName("latency_ms")
+    val latencyMs: Int? = null,
+    val error: String? = null,
+    @SerialName("created_at")
+    val createdAt: Double? = null
 )
 
 @Serializable
