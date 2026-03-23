@@ -101,6 +101,55 @@ class ContractTest {
 
         // Source: lambda/lookup_tables/index.js handleClientChunk (~line 134-138)
         const val FIXTURE_LOOKUP_TABLE_CHUNK = """{"London":{"country":"UK","population":9000000}}"""
+
+        // --- Profile fixtures ---
+        // Source: openapi.yaml UserProfile schema
+        // Note: preferences and custom_fields omitted because @Contextual Any
+        // requires a registered serializer; SDK contract tests validate paths/methods.
+        const val FIXTURE_USER_PROFILE = """{"user_id":"u1","app_id":"test-app","display_name":"Alice","avatar_url":"https://example.com/avatar.png","bio":"Hello!","created_at":1735689600000,"updated_at":1735689600000}"""
+
+        // Source: openapi.yaml UserProfilePublic schema
+        const val FIXTURE_PUBLIC_PROFILE = """{"user_id":"u2","display_name":"Bob","avatar_url":"https://example.com/bob.png","bio":"Hey there"}"""
+
+        // --- Account fixtures ---
+        // Source: openapi.yaml DELETE /apps/{app_id}/account response
+        const val FIXTURE_ACCOUNT_DELETED = """{"status":"deleted","user_id":"u1","deleted_at":1735689600000}"""
+
+        // --- File Storage fixtures ---
+        // Source: openapi.yaml POST /apps/{app_id}/files/upload-url 201 response
+        const val FIXTURE_UPLOAD_URL = """{"file_id":"f1","upload_url":"https://s3.example.com/presigned-url","expires_in":3600}"""
+
+        // Source: openapi.yaml GET /apps/{app_id}/files 200 response
+        const val FIXTURE_FILE_LIST = """{"files":[{"file_id":"f1","filename":"photo.jpg","content_type":"image/jpeg","status":"uploaded","created_at":1735689600,"url":"https://s3.example.com/photo.jpg"}]}"""
+
+        // Source: openapi.yaml GET /apps/{app_id}/files/{file_id} 200 response
+        const val FIXTURE_FILE_METADATA = """{"file_id":"f1","filename":"photo.jpg","content_type":"image/jpeg","status":"uploaded","created_at":1735689600,"url":"https://s3.example.com/photo.jpg"}"""
+
+        // Source: openapi.yaml DELETE /apps/{app_id}/files/{file_id} 200 response
+        const val FIXTURE_FILE_DELETED = """{"deleted":true,"file_id":"f1"}"""
+
+        // --- AI Conversations fixtures ---
+        // Source: openapi.yaml POST /apps/{app_id}/ai/conversations 200 response
+        const val FIXTURE_CONVERSATION_CREATED = """{"conversation_id":"conv-1","title":"My Chat","message_count":0,"created_at":1735689600,"updated_at":1735689600}"""
+
+        // Source: openapi.yaml GET /apps/{app_id}/ai/conversations 200 response
+        const val FIXTURE_CONVERSATION_LIST = """{"conversations":[{"conversation_id":"conv-1","title":"My Chat","message_count":3,"created_at":1735689600,"updated_at":1735689600}],"next_token":"tok-abc"}"""
+
+        // Source: openapi.yaml GET /apps/{app_id}/ai/conversations/{id} 200 response
+        const val FIXTURE_CONVERSATION_DETAIL = """{"conversation_id":"conv-1","title":"My Chat","message_count":2,"created_at":1735689600,"updated_at":1735689600,"system_prompt":"You are helpful"}"""
+
+        // Source: openapi.yaml POST /apps/{app_id}/ai/conversations/{id}/messages 200 response
+        const val FIXTURE_SEND_MESSAGE = """{"conversation_id":"conv-1","assistant_message":{"role":"assistant","content":"Hello! How can I help?"},"usage":{"input_tokens":10,"output_tokens":8,"total_tokens":18,"estimated_cost_usd":0.001},"message_count":4}"""
+
+        // Source: openapi.yaml DELETE /apps/{app_id}/ai/conversations/{id} 200 response
+        const val FIXTURE_CONVERSATION_DELETED = """{"deleted":true,"conversation_id":"conv-1"}"""
+
+        // --- Notification fixtures ---
+        // Source: openapi.yaml POST /apps/{app_id}/notifications/register 200 response
+        const val FIXTURE_DEVICE_REGISTERED = """{"registered":true,"device_id":"dev-1"}"""
+
+        // Source: openapi.yaml DELETE /apps/{app_id}/notifications/register/{device_id} 200 response
+        const val FIXTURE_DEVICE_UNREGISTERED = """{"unregistered":true,"device_id":"dev-1"}"""
     }
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -1079,6 +1128,490 @@ class ContractTest {
             val recorded = server.takeRequest()
 
             assertEquals(TEST_APP_ID, recorded.getHeader("X-App-Id"))
+        }
+    }
+
+    // ========================================================================
+    // ProfileService contract tests
+    // ========================================================================
+
+    @Nested
+    inner class ProfileServiceContract {
+        @Test
+        fun `getProfile targets GET apps-appId-profile`() = runTest {
+            val http = createHttpClient()
+            val service = ProfileService(http)
+            enqueue(FIXTURE_USER_PROFILE)
+
+            val result = service.getProfile()
+            val recorded = server.takeRequest()
+
+            assertEquals("GET", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/profile", recorded.path)
+            assertEquals("u1", result.userId)
+            assertEquals("Alice", result.displayName)
+            assertEquals("Hello!", result.bio)
+        }
+
+        @Test
+        fun `updateProfile targets PUT apps-appId-profile`() = runTest {
+            val http = createHttpClient()
+            val service = ProfileService(http)
+            enqueue(FIXTURE_USER_PROFILE)
+
+            val result = service.updateProfile(displayName = "Alice Updated", bio = "New bio")
+            val recorded = server.takeRequest()
+
+            assertEquals("PUT", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/profile", recorded.path)
+            val body = recorded.body.readUtf8()
+            assertTrue(body.contains("display_name"))
+            assertTrue(body.contains("Alice Updated"))
+        }
+
+        @Test
+        fun `updateProfile sends only provided fields`() = runTest {
+            val http = createHttpClient()
+            val service = ProfileService(http)
+            enqueue(FIXTURE_USER_PROFILE)
+
+            service.updateProfile(bio = "Just bio")
+            val recorded = server.takeRequest()
+
+            val body = recorded.body.readUtf8()
+            assertTrue(body.contains("bio"))
+            assertFalse(body.contains("display_name"))
+            assertFalse(body.contains("avatar_url"))
+        }
+
+        @Test
+        fun `getPublicProfile targets GET apps-appId-profile-userId`() = runTest {
+            val http = createHttpClient()
+            val service = ProfileService(http)
+            enqueue(FIXTURE_PUBLIC_PROFILE)
+
+            val result = service.getPublicProfile("u2")
+            val recorded = server.takeRequest()
+
+            assertEquals("GET", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/profile/u2", recorded.path)
+            assertEquals("u2", result.userId)
+            assertEquals("Bob", result.displayName)
+        }
+
+        @Test
+        fun `getPublicProfile URL-encodes user IDs`() = runTest {
+            val http = createHttpClient()
+            val service = ProfileService(http)
+            enqueue(FIXTURE_PUBLIC_PROFILE)
+
+            service.getPublicProfile("user/special")
+            val recorded = server.takeRequest()
+
+            assertEquals("GET", recorded.method)
+            assertTrue(recorded.path!!.contains("user%2Fspecial"))
+        }
+    }
+
+    // ========================================================================
+    // AccountService contract tests
+    // ========================================================================
+
+    @Nested
+    inner class AccountServiceContract {
+        @Test
+        fun `deleteAccount targets DELETE apps-appId-account`() = runTest {
+            val http = createHttpClient()
+            val service = AccountService(http)
+            enqueue(FIXTURE_ACCOUNT_DELETED)
+
+            val result = service.deleteAccount()
+            val recorded = server.takeRequest()
+
+            assertEquals("DELETE", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/account", recorded.path)
+            assertEquals("deleted", result.status)
+            assertEquals("u1", result.userId)
+        }
+
+        @Test
+        fun `deleteAccount includes reason when provided`() = runTest {
+            val http = createHttpClient()
+            val service = AccountService(http)
+            enqueue(FIXTURE_ACCOUNT_DELETED)
+
+            service.deleteAccount(reason = "No longer needed")
+            val recorded = server.takeRequest()
+
+            assertEquals("DELETE", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/account", recorded.path)
+            val body = recorded.body.readUtf8()
+            assertTrue(body.contains(""""reason":"No longer needed""""))
+        }
+
+        @Test
+        fun `deleteAccount sends no body when reason is null`() = runTest {
+            val http = createHttpClient()
+            val service = AccountService(http)
+            enqueue(FIXTURE_ACCOUNT_DELETED)
+
+            service.deleteAccount()
+            val recorded = server.takeRequest()
+
+            val body = recorded.body.readUtf8()
+            assertTrue(body.isEmpty() || body == "")
+        }
+    }
+
+    // ========================================================================
+    // FileStorageService contract tests
+    // ========================================================================
+
+    @Nested
+    inner class FileStorageServiceContract {
+        @Test
+        fun `getUploadUrl targets POST apps-appId-files-upload-url`() = runTest {
+            val http = createHttpClient()
+            val service = FileStorageService(http)
+            enqueue(FIXTURE_UPLOAD_URL)
+
+            val result = service.getUploadUrl("photo.jpg", "image/jpeg")
+            val recorded = server.takeRequest()
+
+            assertEquals("POST", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/files/upload-url", recorded.path)
+            assertEquals("f1", result.fileId)
+            assertEquals("https://s3.example.com/presigned-url", result.uploadUrl)
+            assertEquals(3600, result.expiresIn)
+        }
+
+        @Test
+        fun `getUploadUrl sends filename and content_type in body`() = runTest {
+            val http = createHttpClient()
+            val service = FileStorageService(http)
+            enqueue(FIXTURE_UPLOAD_URL)
+
+            service.getUploadUrl("doc.pdf", "application/pdf")
+            val recorded = server.takeRequest()
+
+            val body = recorded.body.readUtf8()
+            assertTrue(body.contains(""""filename":"doc.pdf""""))
+            assertTrue(body.contains(""""content_type":"application/pdf""""))
+        }
+
+        @Test
+        fun `listFiles targets GET apps-appId-files`() = runTest {
+            val http = createHttpClient()
+            val service = FileStorageService(http)
+            enqueue(FIXTURE_FILE_LIST)
+
+            val result = service.listFiles()
+            val recorded = server.takeRequest()
+
+            assertEquals("GET", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/files", recorded.path)
+            assertEquals(1, result.files.size)
+            assertEquals("f1", result.files[0].fileId)
+            assertEquals("photo.jpg", result.files[0].filename)
+        }
+
+        @Test
+        fun `getFile targets GET apps-appId-files-fileId`() = runTest {
+            val http = createHttpClient()
+            val service = FileStorageService(http)
+            enqueue(FIXTURE_FILE_METADATA)
+
+            val result = service.getFile("f1")
+            val recorded = server.takeRequest()
+
+            assertEquals("GET", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/files/f1", recorded.path)
+            assertEquals("f1", result.fileId)
+            assertEquals("image/jpeg", result.contentType)
+        }
+
+        @Test
+        fun `deleteFile targets DELETE apps-appId-files-fileId`() = runTest {
+            val http = createHttpClient()
+            val service = FileStorageService(http)
+            enqueue(FIXTURE_FILE_DELETED)
+
+            val result = service.deleteFile("f1")
+            val recorded = server.takeRequest()
+
+            assertEquals("DELETE", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/files/f1", recorded.path)
+            assertTrue(result.deleted!!)
+            assertEquals("f1", result.fileId)
+        }
+    }
+
+    // ========================================================================
+    // ConversationService contract tests
+    // ========================================================================
+
+    @Nested
+    inner class ConversationServiceContract {
+        @Test
+        fun `createConversation targets POST apps-appId-ai-conversations`() = runTest {
+            val http = createHttpClient()
+            val service = ConversationService(http)
+            enqueue(FIXTURE_CONVERSATION_CREATED)
+
+            val result = service.createConversation(title = "My Chat")
+            val recorded = server.takeRequest()
+
+            assertEquals("POST", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/ai/conversations", recorded.path)
+            assertEquals("conv-1", result.conversationId)
+            assertEquals("My Chat", result.title)
+        }
+
+        @Test
+        fun `createConversation sends only provided fields`() = runTest {
+            val http = createHttpClient()
+            val service = ConversationService(http)
+            enqueue(FIXTURE_CONVERSATION_CREATED)
+
+            service.createConversation(title = "Chat", systemPrompt = "Be helpful")
+            val recorded = server.takeRequest()
+
+            val body = recorded.body.readUtf8()
+            assertTrue(body.contains("title"))
+            assertTrue(body.contains("system_prompt"))
+            assertFalse(body.contains("metadata"))
+        }
+
+        @Test
+        fun `listConversations targets GET apps-appId-ai-conversations`() = runTest {
+            val http = createHttpClient()
+            val service = ConversationService(http)
+            enqueue(FIXTURE_CONVERSATION_LIST)
+
+            val result = service.listConversations()
+            val recorded = server.takeRequest()
+
+            assertEquals("GET", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/ai/conversations", recorded.path)
+            assertEquals(1, result.conversations.size)
+            assertEquals("conv-1", result.conversations[0].conversationId)
+            assertEquals("tok-abc", result.nextToken)
+        }
+
+        @Test
+        fun `listConversations includes next_token query param`() = runTest {
+            val http = createHttpClient()
+            val service = ConversationService(http)
+            enqueue(FIXTURE_CONVERSATION_LIST)
+
+            service.listConversations(nextToken = "page-2")
+            val recorded = server.takeRequest()
+
+            assertEquals("GET", recorded.method)
+            assertTrue(recorded.path!!.contains("next_token=page-2"))
+        }
+
+        @Test
+        fun `getConversation targets GET apps-appId-ai-conversations-id`() = runTest {
+            val http = createHttpClient()
+            val service = ConversationService(http)
+            enqueue(FIXTURE_CONVERSATION_DETAIL)
+
+            val result = service.getConversation("conv-1")
+            val recorded = server.takeRequest()
+
+            assertEquals("GET", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/ai/conversations/conv-1", recorded.path)
+            assertEquals("conv-1", result.conversationId)
+            assertEquals("My Chat", result.title)
+            assertEquals("You are helpful", result.systemPrompt)
+        }
+
+        @Test
+        fun `sendMessage targets POST apps-appId-ai-conversations-id-messages`() = runTest {
+            val http = createHttpClient()
+            val service = ConversationService(http)
+            enqueue(FIXTURE_SEND_MESSAGE)
+
+            val result = service.sendMessage("conv-1", "Hello!")
+            val recorded = server.takeRequest()
+
+            assertEquals("POST", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/ai/conversations/conv-1/messages", recorded.path)
+            assertEquals("conv-1", result.conversationId)
+            assertEquals("Hello! How can I help?", result.assistantMessage?.content)
+            assertEquals(18, result.usage?.totalTokens)
+            assertEquals(4, result.messageCount)
+        }
+
+        @Test
+        fun `sendMessage sends content and optional fields in body`() = runTest {
+            val http = createHttpClient()
+            val service = ConversationService(http)
+            enqueue(FIXTURE_SEND_MESSAGE)
+
+            service.sendMessage("conv-1", "Hello!", stream = true, model = "gpt-4")
+            val recorded = server.takeRequest()
+
+            val body = recorded.body.readUtf8()
+            assertTrue(body.contains(""""content":"Hello!""""))
+            assertTrue(body.contains(""""stream":true"""))
+            assertTrue(body.contains(""""model":"gpt-4""""))
+        }
+
+        @Test
+        fun `deleteConversation targets DELETE apps-appId-ai-conversations-id`() = runTest {
+            val http = createHttpClient()
+            val service = ConversationService(http)
+            enqueue(FIXTURE_CONVERSATION_DELETED)
+
+            val result = service.deleteConversation("conv-1")
+            val recorded = server.takeRequest()
+
+            assertEquals("DELETE", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/ai/conversations/conv-1", recorded.path)
+            assertTrue(result.deleted!!)
+            assertEquals("conv-1", result.conversationId)
+        }
+    }
+
+    // ========================================================================
+    // NotificationService contract tests
+    // ========================================================================
+
+    @Nested
+    inner class NotificationServiceContract {
+        @Test
+        fun `registerDevice targets POST apps-appId-notifications-register`() = runTest {
+            val http = createHttpClient()
+            val service = NotificationService(http)
+            enqueue(FIXTURE_DEVICE_REGISTERED)
+
+            val result = service.registerDevice("fcm-token-abc", "fcm")
+            val recorded = server.takeRequest()
+
+            assertEquals("POST", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/notifications/register", recorded.path)
+            assertTrue(result.registered!!)
+            assertEquals("dev-1", result.deviceId)
+        }
+
+        @Test
+        fun `registerDevice sends token and platform in body`() = runTest {
+            val http = createHttpClient()
+            val service = NotificationService(http)
+            enqueue(FIXTURE_DEVICE_REGISTERED)
+
+            service.registerDevice("apns-token-xyz", "apns")
+            val recorded = server.takeRequest()
+
+            val body = recorded.body.readUtf8()
+            assertTrue(body.contains(""""token":"apns-token-xyz""""))
+            assertTrue(body.contains(""""platform":"apns""""))
+        }
+
+        @Test
+        fun `registerDevice includes deviceId when provided`() = runTest {
+            val http = createHttpClient()
+            val service = NotificationService(http)
+            enqueue(FIXTURE_DEVICE_REGISTERED)
+
+            service.registerDevice("fcm-token", "fcm", deviceId = "my-device")
+            val recorded = server.takeRequest()
+
+            val body = recorded.body.readUtf8()
+            assertTrue(body.contains(""""device_id":"my-device""""))
+        }
+
+        @Test
+        fun `unregisterDevice targets DELETE apps-appId-notifications-register-deviceId`() = runTest {
+            val http = createHttpClient()
+            val service = NotificationService(http)
+            enqueue(FIXTURE_DEVICE_UNREGISTERED)
+
+            val result = service.unregisterDevice("dev-1")
+            val recorded = server.takeRequest()
+
+            assertEquals("DELETE", recorded.method)
+            assertEquals("/apps/$TEST_APP_ID/notifications/register/dev-1", recorded.path)
+            assertTrue(result.unregistered!!)
+            assertEquals("dev-1", result.deviceId)
+        }
+    }
+
+    // ========================================================================
+    // New service response deserialization tests
+    // ========================================================================
+
+    @Nested
+    inner class NewServiceDeserializationContract {
+        @Test
+        fun `UserProfile deserializes with all fields`() {
+            val result = json.decodeFromString<UserProfile>(FIXTURE_USER_PROFILE)
+            assertEquals("u1", result.userId)
+            assertEquals("test-app", result.appId)
+            assertEquals("Alice", result.displayName)
+            assertEquals("Hello!", result.bio)
+        }
+
+        @Test
+        fun `UserProfilePublic deserializes with public fields only`() {
+            val result = json.decodeFromString<UserProfilePublic>(FIXTURE_PUBLIC_PROFILE)
+            assertEquals("u2", result.userId)
+            assertEquals("Bob", result.displayName)
+        }
+
+        @Test
+        fun `AccountDeleteResponse deserializes from real response shape`() {
+            val result = json.decodeFromString<AccountDeleteResponse>(FIXTURE_ACCOUNT_DELETED)
+            assertEquals("deleted", result.status)
+            assertEquals("u1", result.userId)
+            assertNotNull(result.deletedAt)
+        }
+
+        @Test
+        fun `UploadUrlResponse deserializes presigned URL response`() {
+            val result = json.decodeFromString<UploadUrlResponse>(FIXTURE_UPLOAD_URL)
+            assertEquals("f1", result.fileId)
+            assertNotNull(result.uploadUrl)
+            assertEquals(3600, result.expiresIn)
+        }
+
+        @Test
+        fun `FileListResponse deserializes file list`() {
+            val result = json.decodeFromString<FileListResponse>(FIXTURE_FILE_LIST)
+            assertEquals(1, result.files.size)
+            assertEquals("photo.jpg", result.files[0].filename)
+        }
+
+        @Test
+        fun `SendMessageResponse deserializes assistant message`() {
+            val result = json.decodeFromString<SendMessageResponse>(FIXTURE_SEND_MESSAGE)
+            assertEquals("conv-1", result.conversationId)
+            assertEquals("assistant", result.assistantMessage?.role)
+            assertEquals("Hello! How can I help?", result.assistantMessage?.content)
+            assertEquals(18, result.usage?.totalTokens)
+        }
+
+        @Test
+        fun `ConversationListResponse handles pagination token`() {
+            val result = json.decodeFromString<ConversationListResponse>(FIXTURE_CONVERSATION_LIST)
+            assertEquals(1, result.conversations.size)
+            assertEquals("tok-abc", result.nextToken)
+        }
+
+        @Test
+        fun `DeviceRegisterResponse deserializes registration`() {
+            val result = json.decodeFromString<DeviceRegisterResponse>(FIXTURE_DEVICE_REGISTERED)
+            assertTrue(result.registered!!)
+            assertEquals("dev-1", result.deviceId)
+        }
+
+        @Test
+        fun `DeviceUnregisterResponse deserializes unregistration`() {
+            val result = json.decodeFromString<DeviceUnregisterResponse>(FIXTURE_DEVICE_UNREGISTERED)
+            assertTrue(result.unregistered!!)
+            assertEquals("dev-1", result.deviceId)
         }
     }
 }

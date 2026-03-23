@@ -234,6 +234,102 @@ if (moderation.results.first().flagged) {
 
 ```
 
+### User Profiles
+
+```kotlin
+// Get the authenticated user's profile
+val myProfile = client.profile.getProfile()
+println("Name: ${myProfile.displayName}")
+
+// Update profile fields (only provided fields are changed)
+val updated = client.profile.updateProfile(
+    displayName = "Alice",
+    bio = "Mobile developer"
+)
+
+// View another user's public profile
+val publicProfile = client.profile.getPublicProfile("user-id")
+println("${publicProfile.displayName}: ${publicProfile.bio}")
+```
+
+### Account
+
+```kotlin
+// Delete account (GDPR right to erasure)
+val result = client.account.deleteAccount(reason = "No longer using the app")
+println("Account ${result.status} at ${result.deletedAt}")
+```
+
+### File Storage
+
+```kotlin
+// Get a presigned upload URL
+val upload = client.files.getUploadUrl("photo.jpg", "image/jpeg")
+println("Upload to: ${upload.uploadUrl}")
+// Then PUT file bytes to upload.uploadUrl
+
+// List all user files
+val fileList = client.files.listFiles()
+for (file in fileList.files) {
+    println("${file.filename} (${file.contentType})")
+}
+
+// Get file metadata and download URL
+val file = client.files.getFile("file-id")
+println("Download: ${file.url}")
+
+// Delete a file
+val deleted = client.files.deleteFile("file-id")
+println("Deleted: ${deleted.deleted}")
+```
+
+### AI Conversations
+
+```kotlin
+// Create a new conversation
+val conversation = client.conversations.createConversation(
+    title = "My Chat",
+    systemPrompt = "You are a helpful assistant."
+)
+
+// List conversations (with pagination)
+val list = client.conversations.listConversations()
+for (conv in list.conversations) {
+    println("${conv.title} (${conv.messageCount} messages)")
+}
+val nextPage = client.conversations.listConversations(nextToken = list.nextToken)
+
+// Get conversation with message history
+val detail = client.conversations.getConversation("conversation-id")
+
+// Send a message and get the assistant's response
+val response = client.conversations.sendMessage(
+    conversationId = "conversation-id",
+    content = "What is Kotlin?",
+    model = "gpt-4"
+)
+println(response.assistantMessage?.content)
+
+// Delete a conversation
+client.conversations.deleteConversation("conversation-id")
+```
+
+### Push Notifications
+
+```kotlin
+// Register a device for push notifications
+val registered = client.notifications.registerDevice(
+    token = "fcm-device-token",
+    platform = "fcm",
+    deviceId = "optional-stable-id"
+)
+println("Registered device: ${registered.deviceId}")
+
+// Unregister a device
+val unregistered = client.notifications.unregisterDevice("device-id")
+println("Unregistered: ${unregistered.unregistered}")
+```
+
 ### Lookup Tables
 
 ```kotlin

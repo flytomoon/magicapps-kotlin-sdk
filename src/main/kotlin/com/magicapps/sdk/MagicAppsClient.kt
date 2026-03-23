@@ -10,6 +10,11 @@ import com.magicapps.sdk.services.EndpointsService
 import com.magicapps.sdk.services.LookupTablesService
 import com.magicapps.sdk.services.OwnerService
 import com.magicapps.sdk.services.SettingsService
+import com.magicapps.sdk.services.ProfileService
+import com.magicapps.sdk.services.AccountService
+import com.magicapps.sdk.services.FileStorageService
+import com.magicapps.sdk.services.ConversationService
+import com.magicapps.sdk.services.NotificationService
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 
@@ -75,6 +80,16 @@ class MagicAppsClient(config: SdkConfig) {
     val owner = OwnerService(http)
     /** Settings and configuration service (all platforms). */
     val settings = SettingsService(http)
+    /** User profile service (all platforms). */
+    val profile = ProfileService(http)
+    /** Account management service (all platforms). */
+    val account = AccountService(http)
+    /** File storage service (all platforms). */
+    val files = FileStorageService(http)
+    /** AI conversations service (all platforms). */
+    val conversations = ConversationService(http)
+    /** Push notification registration service (all platforms). */
+    val notifications = NotificationService(http)
 
     init {
         registry.register(auth)
@@ -86,6 +101,11 @@ class MagicAppsClient(config: SdkConfig) {
         registry.register(lookupTables)
         registry.register(owner)
         registry.register(settings)
+        registry.register(profile)
+        registry.register(account)
+        registry.register(files)
+        registry.register(conversations)
+        registry.register(notifications)
     }
 
     /** Health check - verifies connectivity to the MagicApps API. */
