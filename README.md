@@ -8,7 +8,7 @@ Official Kotlin/Android SDK for the Magic Apps Cloud platform.
 
 ```kotlin
 dependencies {
-    implementation("cloud.magicapps:magicapps-cloud-sdk:0.3.0")
+    implementation("cloud.magicapps:magicapps-cloud-sdk:0.4.1")
 }
 ```
 
@@ -16,7 +16,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'cloud.magicapps:magicapps-cloud-sdk:0.3.0'
+    implementation 'cloud.magicapps:magicapps-cloud-sdk:0.4.1'
 }
 ```
 
@@ -28,7 +28,7 @@ If publishing via GitHub Packages, add the repository to your `build.gradle.kts`
 repositories {
     mavenCentral()
     maven {
-        url = uri("https://maven.pkg.github.com/magicapps/magicapps-infra")
+        url = uri("https://maven.pkg.github.com/flytomoon/magicapps-infra")
         credentials {
             username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
             password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
