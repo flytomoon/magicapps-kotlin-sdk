@@ -15,6 +15,7 @@ import com.magicapps.sdk.services.AccountService
 import com.magicapps.sdk.services.FileStorageService
 import com.magicapps.sdk.services.ConversationService
 import com.magicapps.sdk.services.NotificationService
+import com.magicapps.sdk.services.EmailService
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 
@@ -90,6 +91,8 @@ class MagicAppsClient(config: SdkConfig) {
     val conversations = ConversationService(http)
     /** Push notification registration service (all platforms). */
     val notifications = NotificationService(http)
+    /** Email image and text hosting service (all platforms). */
+    val email = EmailService(http)
 
     init {
         registry.register(auth)
@@ -106,6 +109,7 @@ class MagicAppsClient(config: SdkConfig) {
         registry.register(files)
         registry.register(conversations)
         registry.register(notifications)
+        registry.register(email)
     }
 
     /** Health check - verifies connectivity to the MagicApps API. */
