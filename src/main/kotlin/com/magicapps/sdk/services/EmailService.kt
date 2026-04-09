@@ -153,4 +153,30 @@ class EmailService(private val http: SdkHttpClient) : ServiceModule {
      */
     suspend fun getTokenStatus(token: String): EmailTokenStatus =
         http.get("/apps/${http.appId}/routines/email-status/$token", authMode = AuthMode.OWNER)
+
+    /**
+     * Send tokenized content via email.
+     *
+     * @param to Recipient email address
+     * @param token Content token (image or text) to include in the email
+     * @param subject Email subject line
+     * @param senderName Optional display name for the sender
+     * @return [EmailSendResponse] with the message ID and delivery status
+     */
+    suspend fun send(
+        to: String,
+        token: String,
+        subject: String,
+        senderName: String? = null
+    ): EmailSendResponse {
+        val nameField = if (senderName != null) ""","sender_name":"${senderName.replace("\"", "\\\"")}"""" else ""
+        val body = """{"to":"${to.replace("\"", "\\\"")}","token":"${token.replace("\"", "\\\"")}","subject":"${subject.replace("\"", "\\\"")}"%s}""".format(nameField)
+        return http.post("/apps/${http.appId}/routines/email-send", body, AuthMode.OWNER)
+    }
 }
+
+@Serializable
+data class EmailSendResponse(
+    @SerialName("message_id") val messageId: String,
+    val status: String
+)
